@@ -44,13 +44,20 @@
 /* Includes ------------------------------------------------------------------*/
 #include "drv_VirtualCom.h"
 
+#define USB_HS_PORT 1
+#define USB_FS_PORT 0
+
 /* Private function declarations ---------------------------------------------*/
 static int8_t Rewrite_CDC_Init_HS(void);
 static int8_t Rewrite_CDC_Receive_HS(uint8_t* Recv_Data, uint32_t* ReceiveLen);
 static int8_t Rewrite_CDC_TransmitCplt_HS(uint8_t* Buf, uint32_t* Len, uint8_t epnum);
 
 /* Extern variables ----------------------------------------------------------*/
-extern USBD_HandleTypeDef hUsbDeviceHS;
+#if USB_HS_PORT
+  extern USBD_HandleTypeDef hUsbDeviceHS;
+#elif USB_FS_PORT
+  extern USBD_HandleTypeDef hUsbDeviceFS;
+#endif
 
 /* Private variables ---------------------------------------------------------*/
 VirtualComRecCallbackType pVirtualComRecCpltCallback;
@@ -69,9 +76,15 @@ void VirtualComUserInit(uint8_t* _RxBuf, VirtualComRecCallbackType _pVirtualComR
 {
 	
 	pUserRxBuf = _RxBuf;
+#if USB_HS_PORT
 	USBD_Interface_fops_HS.Receive = Rewrite_CDC_Receive_HS;
 	USBD_Interface_fops_HS.TransmitCplt = Rewrite_CDC_TransmitCplt_HS;
 	USBD_Interface_fops_HS.Init = Rewrite_CDC_Init_HS;
+#elif USB_FS_PORT
+  USBD_Interface_fops_FS.Receive = Rewrite_CDC_Receive_HS;
+	USBD_Interface_fops_FS.TransmitCplt = Rewrite_CDC_TransmitCplt_HS;
+	USBD_Interface_fops_FS.Init = Rewrite_CDC_Init_HS;
+#endif
 	
 	pVirtualComRecCpltCallback = _pVirtualComRecCpltCallback;
 	pVirtualComTrsmCpltCallback = _pVirtualComTrsmCpltCallback;
@@ -83,7 +96,11 @@ void VirtualComUserInit(uint8_t* _RxBuf, VirtualComRecCallbackType _pVirtualComR
 */
 static int8_t Rewrite_CDC_Init_HS(void)
 {
+#if USB_HS_PORT
   USBD_CDC_SetRxBuffer(&hUsbDeviceHS, pUserRxBuf);
+#elif USB_FS_PORT
+  USBD_CDC_SetRxBuffer(&hUsbDeviceFS, pUserRxBuf);
+#endif
   return (USBD_OK);
 }
 
@@ -113,9 +130,14 @@ static int8_t Rewrite_CDC_Receive_HS(uint8_t* Recv_Data, uint32_t* ReceiveLen)
 	
 	if(pVirtualComRecCpltCallback != NULL)
 		pVirtualComRecCpltCallback(Recv_Data, *ReceiveLen);
-	
+
+#if USB_HS_PORT	
   USBD_CDC_SetRxBuffer(&hUsbDeviceHS, pUserRxBuf);
   result = USBD_CDC_ReceivePacket(&hUsbDeviceHS);
+#elif USB_FS_PORT
+  USBD_CDC_SetRxBuffer(&hUsbDeviceFS, pUserRxBuf);
+  result = USBD_CDC_ReceivePacket(&hUsbDeviceFS);
+#endif
 	
 	return result;
 }
@@ -134,17 +156,24 @@ uint8_t VirtualComTransmitData(uint8_t* _TxBuf, uint32_t _Len)
 	{
 		return USBD_FAIL;
 	}
-	
+#if USB_HS_PORT	
 	USBD_CDC_HandleTypeDef* hcdc = (USBD_CDC_HandleTypeDef*)hUsbDeviceHS.pClassData;
+#elif USB_FS_PORT
+  USBD_CDC_HandleTypeDef* hcdc = (USBD_CDC_HandleTypeDef*)hUsbDeviceFS.pClassData;
+#endif
 	
   if (hcdc->TxState != 0)
 	{
     return USBD_BUSY;
   }
-	
+#if USB_HS_PORT		
 	/* 设置发送数组 */
   USBD_CDC_SetTxBuffer(&hUsbDeviceHS, _TxBuf, _Len);
   result = USBD_CDC_TransmitPacket(&hUsbDeviceHS);
+#elif USB_FS_PORT
+  USBD_CDC_SetTxBuffer(&hUsbDeviceFS, _TxBuf, _Len);
+  result = USBD_CDC_TransmitPacket(&hUsbDeviceFS);
+#endif
 	
 	return result;
 }

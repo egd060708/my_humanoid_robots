@@ -26,6 +26,7 @@ TaskHandle_t DR16_Handle;
 TaskHandle_t FS_I6X_Handle;
 TaskHandle_t Rx_Referee_Handle;
 TaskHandle_t BETAFPV_Handle;
+TaskHandle_t VirtualCom_Handle;
 /* Private function declarations ---------------------------------------------*/
 void tskDjiMotor(void *arg);
 void tskFS_I6X(void *arg);
@@ -33,6 +34,7 @@ void tskIMU(void *arg);
 void tskDR16(void *arg);
 void Rx_Referee(void *arg);
 void tskBETAFPV(void *arg);
+void tskVirtualCom(void *arg);
 bool is_goding = false;
 /* Function prototypes -------------------------------------------------------*/
 /**
@@ -58,6 +60,10 @@ void Service_Devices_Init(void)
 
 #if USE_SRML_REFEREE
 	xTaskCreate(Rx_Referee, "Rx_Referee", Normal_Stack_Size, NULL, PriorityNormal, &Rx_Referee_Handle);
+#endif
+	
+#if USE_SRML_VIRTUAL_COM
+	xTaskCreate(tskVirtualCom, "App.VirtualCom", Small_Stack_Size, NULL, PriorityHigh, &VirtualCom_Handle);
 #endif
 }
 
@@ -201,6 +207,24 @@ void tskBETAFPV(void *arg)
 		xSemaphoreGive(BETAFPV_mutex);
 	}
 }
+
+#if USE_SRML_VIRTUAL_COM
+void tskVirtualCom(void *arg)
+{
+	/* Pre-Load for task */
+	TickType_t xLastWakeTime_t;
+	xLastWakeTime_t = xTaskGetTickCount();
+	/* 测试数据包 */
+	uint8_t testbuffer[] = "STM32 Virtual Com test!\n";
+	for(;;)
+    {
+		/* wait for next circle */
+		VirtualComTransmitData(testbuffer, sizeof(testbuffer));
+		
+		vTaskDelayUntil(&xLastWakeTime_t, 5);
+	}
+}
+#endif
 
 #if USE_SRML_DR16
 /**
