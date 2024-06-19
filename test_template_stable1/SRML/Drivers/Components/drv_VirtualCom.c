@@ -51,6 +51,9 @@
 static int8_t Rewrite_CDC_Init_HS(void);
 static int8_t Rewrite_CDC_Receive_HS(uint8_t* Recv_Data, uint32_t* ReceiveLen);
 static int8_t Rewrite_CDC_TransmitCplt_HS(uint8_t* Buf, uint32_t* Len, uint8_t epnum);
+//static int8_t Rewrite_CDC_Init_FS(void);
+//static int8_t Rewrite_CDC_Receive_FS(uint8_t* Recv_Data, uint32_t* ReceiveLen);
+//static int8_t Rewrite_CDC_TransmitCplt_FS(uint8_t* Buf, uint32_t* Len, uint8_t epnum);
 
 /* Extern variables ----------------------------------------------------------*/
 #if USB_HS_PORT
@@ -119,7 +122,7 @@ static int8_t Rewrite_CDC_TransmitCplt_HS(uint8_t* Buf, uint32_t* Len, uint8_t e
 	return result;
 }
 /**
-* @brief 重写CDC发送回调函数,并导向用户回调函数,用于给USBD_Interface_fops_HS.TransmitCplt赋值,
+* @brief 重写CDC接收回调函数,并导向用户回调函数,用于给USBD_Interface_fops_HS.ReceiveCplt赋值,
 * 			 虚拟串口接收到数据后将在USB库底层调用这个函数
 * @param _Len 接收到的数据长度
 * @param _Buf 接收到的数组
