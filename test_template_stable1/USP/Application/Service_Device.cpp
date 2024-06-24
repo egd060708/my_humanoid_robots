@@ -44,7 +44,7 @@ bool is_goding = false;
  */
 void Service_Devices_Init(void)
 {
-	xTaskCreate(tskDjiMotor, "App.Motor", Small_Stack_Size, NULL, PriorityNormal, &DjiMotor_Handle);
+	xTaskCreate(tskDjiMotor, "App.Motor", Huge_Stack_Size, NULL, PriorityNormal, &DjiMotor_Handle);
 #if USE_SRML_MPU6050
 	xTaskCreate(tskIMU, "App.IMU", Normal_Stack_Size, NULL, PrioritySuperHigh, &IMU_Handle);
 #endif
@@ -63,7 +63,7 @@ void Service_Devices_Init(void)
 #endif
 	
 #if USE_SRML_VIRTUAL_COM
-	xTaskCreate(tskVirtualCom, "App.VirtualCom", Small_Stack_Size, NULL, PriorityHigh, &VirtualCom_Handle);
+	xTaskCreate(tskVirtualCom, "App.VirtualCom", Normal_Stack_Size, NULL, PriorityHigh, &VirtualCom_Handle);
 #endif
 }
 
@@ -74,33 +74,7 @@ void Service_Devices_Init(void)
 void tskDjiMotor(void *arg)
 {
 	/*	pre load for task	*/
-	Motor_CAN_COB Tx_Buff = {};
-
-	can1Cob.ID = CANTESTID;
-	can1Cob.DLC = 8;
-
-	can1def.test1 = 10;
-	can1def.test2 = 20;
-	can1def.test3 = 30;
-	can1def.test4 = 40;
-
-	memcpy((uint8_t *)can1Cob.Data, &can1def, 8);
-
-	// 5010
-	lkmotor.setTorqueConstant(0.1);
-	lkmotor.setCurrent2ARatio(33.f/2048.f);
-	// // 4010
-	// lkmotor.setTorqueConstant(0.07);
-	// lkmotor.setCurrent2ARatio(33.f/2048.f);
-	// // 8008
-	// lkmotor.setTorqueConstant(0.22);
-	// lkmotor.setCurrent2ARatio(33.f/2048.f);
-
-	// 打开电机
-	lkmotor.init(CAN2_TxPort);
-	vTaskDelay(2);
-	lkmotor.startMotor();
-	vTaskDelay(10);
+	rMiddleware.init(USART_TxPort,1);
 
 	TickType_t xLastWakeTime_t;
 	xLastWakeTime_t = xTaskGetTickCount();
@@ -108,14 +82,9 @@ void tskDjiMotor(void *arg)
 	{
 		/* wait for next circle */
 		vTaskDelayUntil(&xLastWakeTime_t, 5);
-//		xQueueSend(CAN1_TxPort, &can1Cob, 1);
-
-		if(is_goding){
-			lkmotor.speedControl(60);
-		}
-		else{
-			lkmotor.iqCloseControl_Current(0);
-		}
+		humanLeg.State_Data_Update();
+		humanLeg.State_Judge();
+		humanLeg.State_Return();
 
 		/* dji电机库使用示例 */
 		// 1. 电机控制
@@ -215,13 +184,12 @@ void tskVirtualCom(void *arg)
 	TickType_t xLastWakeTime_t;
 	xLastWakeTime_t = xTaskGetTickCount();
 	/* 测试数据包 */
-	uint8_t testbuffer[] = "STM32 Virtual Com test!\n";
+	uint8_t testbuffer[] = "STM32 Virtual Com test1!\n";
 	for(;;)
     {
 		/* wait for next circle */
-		VirtualComTransmitData(testbuffer, sizeof(testbuffer));
-		
 		vTaskDelayUntil(&xLastWakeTime_t, 5);
+		VirtualComTransmitData(testbuffer, sizeof(testbuffer));
 	}
 }
 #endif

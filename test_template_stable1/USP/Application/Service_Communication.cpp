@@ -23,7 +23,7 @@ TaskHandle_t CAN1SendPort_Handle;
 TaskHandle_t CAN2SendPort_Handle;
 TaskHandle_t CAN1ReceivePort_Handle;
 TaskHandle_t CAN2ReceivePort_Handle;
-# endif
+#endif
 #if USE_SRML_UART
 TaskHandle_t UartTransmitPort_Handle;
 TaskHandle_t UartReceivePort_Handle;
@@ -34,7 +34,7 @@ void Task_CAN1Transmit(void *arg);
 void Task_CAN2Transmit(void *arg);
 void Task_CAN1Receive(void *arg);
 void Task_CAN2Receive(void *arg);
-# endif
+#endif
 #if USE_SRML_UART
 void Task_UsartTransmit(void *arg);
 void Task_UsartReceive(void *arg);
@@ -51,7 +51,7 @@ void Service_Communication_Init(void)
   xTaskCreate(Task_CAN2Transmit, "Com.CAN2 TxPort", Small_Stack_Size, NULL, PriorityRealtime, &CAN2SendPort_Handle);
   xTaskCreate(Task_CAN1Receive, "Com.CAN1 RxPort", Small_Stack_Size, NULL, PriorityRealtime, &CAN1ReceivePort_Handle);
   xTaskCreate(Task_CAN2Receive, "Com.CAN2 RxPort", Small_Stack_Size, NULL, PriorityRealtime, &CAN2ReceivePort_Handle);
-# endif
+#endif
   /* USART Management */
 #if USE_SRML_UART
   xTaskCreate(Task_UsartReceive, "Com.Usart RxPort", Small_Stack_Size, NULL, PriorityRealtime, &UartReceivePort_Handle);
@@ -128,7 +128,8 @@ void Task_CAN1Receive(void *arg)
     /* update motor data from CAN1_RxPort */
     if (xQueueReceive(CAN1_RxPort, &CAN_RxCOB, portMAX_DELAY) == pdPASS)
     {
-      lkmotor.update(CAN_RxCOB.ID, CAN_RxCOB.Data);
+      // lkmotor.update(CAN_RxCOB.ID, CAN_RxCOB.Data);
+      rMiddleware.Motor_Rec(&CAN_RxCOB);
       // 这里调用自定义的电机can数据更新接口
       // 注意！！！如果接口里函数嵌套、临时变量很多，请考虑该任务栈大小
 
@@ -163,16 +164,17 @@ void Task_CAN2Receive(void *arg)
     /* update motor data from CAN1_RxPort */
     if (xQueueReceive(CAN2_RxPort, &CAN_RxCOB, portMAX_DELAY) == pdPASS)
     {
-			lkmotor.update(CAN_RxCOB.ID, CAN_RxCOB.Data);
+      // lkmotor.update(CAN_RxCOB.ID, CAN_RxCOB.Data);
+      rMiddleware.Motor_Rec(&CAN_RxCOB);
       // 这里调用自定义的电机can数据更新接口
       // 注意！！！如果接口里函数嵌套、临时变量很多，请考虑该任务栈大小
 
       // 更新电机数据，如
       // if (pitchmotor.update(CAN_RxCOB.ID, CAN_RxCOB.Data));
       // else if (yawmotor.update(CAN_RxCOB.ID, CAN_RxCOB.Data));
-//      if(CAN_RxCOB.ID == CANTESTID){
-//        memcpy((uint8_t *)&can2def, CAN_RxCOB.Data, CAN_RxCOB.DLC);
-//      }
+      //      if(CAN_RxCOB.ID == CANTESTID){
+      //        memcpy((uint8_t *)&can2def, CAN_RxCOB.Data, CAN_RxCOB.DLC);
+      //      }
     }
   }
 }
@@ -253,6 +255,7 @@ void Task_UsartReceive(void *arg)
       switch (Usart_RxCOB.port_num)
       {
       case 1:
+//        rMiddleware.processRecSlave((slaveCom_s *)Usart_RxCOB.address);
         break;
       case 2:
         break;
@@ -337,7 +340,7 @@ uint32_t DR16_RxCpltCallback(uint8_t *Recv_Data, uint16_t ReceiveLen)
 #if USE_SRML_FS_I6X
 uint32_t FS_I6X_RxCpltCallback(uint8_t *Recv_Data, uint16_t ReceiveLen)
 {
-  if(ReceiveLen >= 25 && FS_I6X_Handle != nullptr)
+  if (ReceiveLen >= 25 && FS_I6X_Handle != nullptr)
   {
     BaseType_t xHigherPriorityTaskWoken;
     remote.DataCapture(Recv_Data);
@@ -364,8 +367,9 @@ uint32_t Referee_recv_Callback(uint8_t *Recv_Data, uint16_t ReceiveLen)
 #endif
 
 #if USE_SRML_VIRTUAL_COM
-void User_VirtualComRecCpltCallback(uint8_t* Recv_Data, uint16_t ReceiveLen)
+void User_VirtualComRecCpltCallback(uint8_t *Recv_Data, uint16_t ReceiveLen)
 {
+  rMiddleware.processRecHost(Recv_Data, ReceiveLen);
 }
 #endif
 

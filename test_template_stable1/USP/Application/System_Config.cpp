@@ -70,12 +70,12 @@ void System_Device_Init(void)
 //  Uart_Init(&huart6, NULL, UART6_RX_BUFFER_SIZE, UART6_RxCpltCallback);
 #endif
 
-//  Uart_Init(&huart1, NULL, UART1_RX_BUFFER_SIZE, UART1_RxCpltCallback);
-//  Uart_Init(&huart3, NULL, UART3_RX_BUFFER_SIZE, UART3_RxCpltCallback);
+  Uart_Init(&huart1, NULL, UART1_RX_BUFFER_SIZE, UART1_RxCpltCallback);
+  Uart_Init(&huart3, NULL, UART3_RX_BUFFER_SIZE, UART3_RxCpltCallback);
 //  Uart_Init(&huart4, NULL, UART4_RX_BUFFER_SIZE, UART4_RxCpltCallback);
 //	Uart_Init(&huart2, NULL, UART2_RX_BUFFER_SIZE, UART2_RxCpltCallback);
-  Uart_Init(&huart5, NULL, UART5_RX_BUFFER_SIZE, UART5_RxCpltCallback);
-	Uart_Init(&huart6, NULL, UART2_RX_BUFFER_SIZE, BETAFPV_RxCpltCallback);
+//  Uart_Init(&huart5, NULL, UART5_RX_BUFFER_SIZE, UART5_RxCpltCallback);
+	Uart_Init(&huart6, NULL, UART6_RX_BUFFER_SIZE, BETAFPV_RxCpltCallback);
 
 #endif  //#if USE_SRML_UART
 

@@ -44,8 +44,8 @@
 /* Includes ------------------------------------------------------------------*/
 #include "drv_VirtualCom.h"
 
-#define USB_HS_PORT 1
-#define USB_FS_PORT 0
+#define USB_HS_PORT 0
+#define USB_FS_PORT 1
 
 /* Private function declarations ---------------------------------------------*/
 static int8_t Rewrite_CDC_Init_HS(void);

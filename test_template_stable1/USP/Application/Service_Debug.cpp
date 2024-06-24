@@ -45,26 +45,31 @@ void Task_UpperMonitor(void *arg)
 	TickType_t xLastWakeTime_t;
 	xLastWakeTime_t = xTaskGetTickCount();
 
-	UpperMonitor::init(4);// 开启上位机修改变量功能，与发送无关，不使用也能照常发送
+//	UpperMonitor::init(2);// 开启上位机修改变量功能，与发送无关，不使用也能照常发送
 	// 分配编号给被修改的变量
 	// UpperMonitor::bind_Modified_Var(0, ...);
 	// UpperMonitor::bind_Modified_Var(1, ...);
 	// UpperMonitor::bind_Modified_Var(2, ...);
 	// UpperMonitor::bind_Modified_Var(3, ...);
 	// UpperMonitor::bind_Modified_Var(4, ...);
-
+	float test = 0;
 	/* Infinite loop */
 	for (;;)
 	{
 		/* Wait for the next cycle */
 		vTaskDelayUntil(&xLastWakeTime_t, 5);
-
+		if(test>500){
+			test = 0;
+		}
+		else{
+			test++;
+		}
 		/* 在此处传入需要观察的变量，第一个参数为通道的起始编号 */
-		// UpperMonitor::setDatas(0, mpu_receive.pitch, mpu_receive.yaw, mpu_receive.roll);
+		UpperMonitor::setDatas(1, test);
 		//UpperMonitor::setDatas(3, data3, data4, data5);
 		//UpperMonitor::setDatas(6, data6, data7, data8, data9);
 		/* 选择串口id */
-		UpperMonitor::send(4);
+		UpperMonitor::send(2);
 	}
 }
 #endif /* USE_SRML_UPEER_MONITOR */
@@ -76,19 +81,24 @@ void Task_VofaMonitor(void *arg){
 	/* Pre-Load for task */
 	TickType_t xLastWakeTime_t;
 	xLastWakeTime_t = xTaskGetTickCount();
-
+	float test = 0;
 	/* Infinite loop */
 	while(1)
 	{
 		/* Wait for the next cycle */
 		vTaskDelayUntil(&xLastWakeTime_t, 5);
-
+		if(test>500){
+			test = 0;
+		}
+		else{
+			test++;
+		}
 		/* 在此处传入需要观察的变量，第一个参数为通道的起始编号 */
-		VofaMonitor::setDatas(0, mpu_receive.pitch, mpu_receive.yaw, mpu_receive.roll);
+		VofaMonitor::setDatas(0, test);
 		//VofaMonitor::setDatas(3, data3, data4, data5);
 		//VofaMonitor::setDatas(6, data6, data7, data8, data9);
 		/* 选择串口id */
-		VofaMonitor::send(4);
+		VofaMonitor::send(2);
 	}
 }
 #endif	/* USE_SRML_VOFA_MONITOR */

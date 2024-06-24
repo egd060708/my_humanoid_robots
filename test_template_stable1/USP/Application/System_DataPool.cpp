@@ -72,4 +72,8 @@ CanTestStructdef can2def = {};
 CAN_COB can1Cob = {};
 CAN_COB can2Cob = {};
 
+// 自定义控制类型
+Arm_Controller_s<5> fiveDofCtrl(rOrder::XZY);
+robotMiddleware rMiddleware(&BETAFPV);
+Humanoid_Leg_Classdef humanLeg(&fiveDofCtrl,&rMiddleware);
 /************************ COPYRIGHT(C) SCUT-ROBOTLAB **************************/

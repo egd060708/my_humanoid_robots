@@ -30,19 +30,19 @@
 #include "srml_std_lib.h"
 
 #if USE_SRML_MOTOR_DJI
-  #include "Drivers/Devices/Motor_Dji/motor_dji.h"
+#include "Drivers/Devices/Motor_Dji/motor_dji.h"
 #endif
 #if USE_SRML_MF9025_V2
-  #include "Drivers/Devices/MF9025_V2/MF9025_V2.h"
+#include "Drivers/Devices/MF9025_V2/MF9025_V2.h"
 #endif
 #if USE_SRML_HT04
-  #include "Drivers/Devices/HT_04/HT04.h"
+#include "Drivers/Devices/HT_04/HT04.h"
 #endif
 #if USE_SRML_MOTOR_DM
-  #include "Drivers/Devices/Motor_DM/motor_dm.h"
+#include "Drivers/Devices/Motor_DM/motor_dm.h"
 #endif
 #if USE_SRML_CYBER_GEAR
-  #include "Drivers/Devices/Motor_CyberGear/Motor_CyberGear.h"
+#include "Drivers/Devices/Motor_CyberGear/Motor_CyberGear.h"
 #endif
 
 #if USE_SRML_WEBOTS
@@ -53,9 +53,9 @@ typedef webots::PositionSensor Webots_PositionSensor;
 #endif
 
 #ifdef USE_AC6
-    #define __used_attribute__
+#define __used_attribute__
 #else
-    #define __used_attribute__ __attribute__((used))
+#define __used_attribute__ __attribute__((used))
 #endif
 
 /* 匿名命名空间，使基类无法被外部链接 */
@@ -70,14 +70,14 @@ namespace
     class abstractMotorBase
     {
     protected:
-        virtual float getRawMotorTotalAngle() = 0; 
-        virtual float getRawMotorAngle() = 0;      
+        virtual float getRawMotorTotalAngle() = 0;
+        virtual float getRawMotorAngle() = 0;
         virtual float getRawMotorSpeed() = 0;
         virtual void setRawMotorCurrentOut(float out) = 0;
 
     public:
         template <typename... Args>
-        abstractMotorBase(Args... arg) : motor(arg...){}
+        abstractMotorBase(Args... arg) : motor(arg...) {}
         motorType motor;
         virtual bool update(uint32_t canRecID, uint8_t data[8]) = 0;
 
@@ -152,13 +152,27 @@ protected:
     {
         motor.iqCloseControl_Current(out);
     }
+    inline void setRawMotorAngle(float angle)
+    {
+        motor.angleTotalControl_1(angle);
+    }
+    inline void setRawMotorAngleWithSpeed(float angle, float speed)
+    {
+        motor.angleTotalControl_2(angle, abs(speed));
+    }
 
 public:
     template <typename... Args>
-    abstractMotor(Args... arg) : abstractMotorBase(arg...){}
+    abstractMotor(Args... arg) : abstractMotorBase(arg...) {}
     virtual bool update(uint32_t canRecID, uint8_t data[8]) override
     {
         return motor.update(canRecID, data);
+    }
+    inline void setMotorAngle(float angle){
+        setRawMotorAngle((angle - baseAngle) / angle_unit_convert / Polarity);
+    }
+    inline void setMotorAngleWithSpeed(float angle, float speed){
+        setRawMotorAngleWithSpeed((angle - baseAngle) / angle_unit_convert / Polarity,speed);
     }
 };
 
@@ -194,7 +208,7 @@ protected:
 
 public:
     template <typename... Args>
-    abstractMotor(Args... arg) : abstractMotorBase(arg...){}
+    abstractMotor(Args... arg) : abstractMotorBase(arg...) {}
     virtual bool update(uint32_t canRecID, uint8_t data[8]) override
     {
         return motor.update(canRecID, data);
@@ -224,7 +238,7 @@ protected:
 
 public:
     template <typename... Args>
-    abstractMotor(Args... arg) : abstractMotorBase(arg...){}
+    abstractMotor(Args... arg) : abstractMotorBase(arg...) {}
     virtual bool update(uint32_t canRecID, uint8_t data[8]) override
     {
         return motor.update(canRecID, data);
@@ -254,7 +268,7 @@ protected:
 
 public:
     template <typename... Args>
-    abstractMotor(Args... arg) : abstractMotorBase(arg...){}
+    abstractMotor(Args... arg) : abstractMotorBase(arg...) {}
     virtual bool update(uint32_t canRecID, uint8_t data[8]) override
     {
         return motor.update(canRecID, data);
@@ -268,10 +282,10 @@ public:
 
 /**
  * @brief 单个抽象电机单个can包发送
- * 
- * @tparam MotorType 
- * @param CanQueueHander 
- * @param absMotor 
+ *
+ * @tparam MotorType
+ * @param CanQueueHander
+ * @param absMotor
  */
 template <class MotorType>
 void MotorMsgSend(QueueHandle_t CanQueueHander, abstractMotor<MotorType> &absMotor)
@@ -280,15 +294,14 @@ void MotorMsgSend(QueueHandle_t CanQueueHander, abstractMotor<MotorType> &absMot
     motor_dji_send::MotorMsgSend(CanQueueHander, absMotor.motor);
 }
 
-
 /**
  * @brief N个同一类型抽象电机打包成若干个can包（实际高位和低位两个can包）
  * @warning 电机数量不宜过多，否则部分电机数据有可能丢包
- * 
- * @tparam MotorType 
- * @tparam N 
- * @param motor_msg 
- * @return Motor_CAN_COB& 
+ *
+ * @tparam MotorType
+ * @tparam N
+ * @param motor_msg
+ * @return Motor_CAN_COB&
  */
 template <class MotorType, int N>
 Motor_CAN_COB &MotorMsgPack(Motor_CAN_COB &motor_msg, abstractMotor<MotorType> (&absMotor)[N])
@@ -303,13 +316,13 @@ Motor_CAN_COB &MotorMsgPack(Motor_CAN_COB &motor_msg, abstractMotor<MotorType> (
 /**
  * @brief 多个不同类型抽象电机打包成若干个can包
  * @warning 电机数量不宜过多，否则部分电机数据有可能丢包，同一路can总线一次性发送多个can包，有可能出现部分电机数据包被覆盖的情况
- * 
- * @tparam MotorType 
- * @tparam MotorTypes 
- * @param motor_msg 
- * @param absMotor 
- * @param motors 
- * @return Motor_CAN_COB& 
+ *
+ * @tparam MotorType
+ * @tparam MotorTypes
+ * @param motor_msg
+ * @param absMotor
+ * @param motors
+ * @return Motor_CAN_COB&
  */
 template <class MotorType, class... MotorTypes>
 Motor_CAN_COB &MotorMsgPack(Motor_CAN_COB &motor_msg, abstractMotor<MotorType> &absMotor, MotorTypes &...motors)
@@ -320,11 +333,11 @@ Motor_CAN_COB &MotorMsgPack(Motor_CAN_COB &motor_msg, abstractMotor<MotorType> &
 
 /**
  * @brief 单个抽象电机打包成一个can包
- * 
- * @tparam MotorType 
- * @param motor_msg 
- * @param absMotor 
- * @return Motor_CAN_COB& 
+ *
+ * @tparam MotorType
+ * @param motor_msg
+ * @param absMotor
+ * @return Motor_CAN_COB&
  */
 template <class MotorType>
 Motor_CAN_COB &MotorMsgPack(Motor_CAN_COB &motor_msg, abstractMotor<MotorType> &absMotor)
@@ -341,9 +354,9 @@ template <>
 class abstractMotor<MotorHT04Classdef> : public abstractMotorBase<MotorHT04Classdef>
 {
 protected:
-    virtual float getRawMotorTotalAngle() override __used_attribute__ 
+    virtual float getRawMotorTotalAngle() override __used_attribute__
     {
-        return 0; 
+        return 0;
     }
     virtual float getRawMotorAngle() override __used_attribute__
     {
@@ -374,7 +387,7 @@ protected:
 
 public:
     template <typename... Args>
-    abstractMotor(Args... arg) : abstractMotorBase(arg...){}
+    abstractMotor(Args... arg) : abstractMotorBase(arg...) {}
     virtual bool update(uint32_t canRecID, uint8_t data[8]) override
     {
         return motor.update(canRecID, data);
@@ -448,7 +461,7 @@ protected:
 
 public:
     template <typename... Args>
-    abstractMotor(Args... arg) : abstractMotorBase(arg...){}
+    abstractMotor(Args... arg) : abstractMotorBase(arg...) {}
     inline void init(QueueHandle_t _CAN_TxPort)
     {
         motor.bindCanQueueHandle(_CAN_TxPort);
@@ -514,7 +527,7 @@ protected:
 
 public:
     template <typename... Args>
-    abstractMotor(Args... arg) : abstractMotorBase(arg...){}
+    abstractMotor(Args... arg) : abstractMotorBase(arg...) {}
     inline void init(QueueHandle_t _CAN_TxPort)
     {
         motor.bindCanQueueHandle(_CAN_TxPort);
@@ -550,7 +563,7 @@ class abstractMotorClassdef<Webots_Motor> : public abstractMotorBase
 {
 protected:
     Webots_Motor motor = nullptr;
-    Webots_PositionSensor* motorPositionSensor = nullptr;
+    Webots_PositionSensor *motorPositionSensor = nullptr;
     virtual float getRawMotorTotalAngle() __used_attribute__
     {
         return motorPositionSensor->getValue();
