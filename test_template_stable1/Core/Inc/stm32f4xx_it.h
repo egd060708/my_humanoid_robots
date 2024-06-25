@@ -72,9 +72,6 @@ void OTG_FS_IRQHandler(void);
 void DMA2_Stream6_IRQHandler(void);
 void DMA2_Stream7_IRQHandler(void);
 void USART6_IRQHandler(void);
-void OTG_HS_EP1_OUT_IRQHandler(void);
-void OTG_HS_EP1_IN_IRQHandler(void);
-void OTG_HS_IRQHandler(void);
 /* USER CODE BEGIN EFP */
 
 /* USER CODE END EFP */

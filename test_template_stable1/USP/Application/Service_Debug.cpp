@@ -58,14 +58,17 @@ void Task_UpperMonitor(void *arg)
 	{
 		/* Wait for the next cycle */
 		vTaskDelayUntil(&xLastWakeTime_t, 5);
-		if(test>500){
-			test = 0;
-		}
-		else{
-			test++;
-		}
 		/* 在此处传入需要观察的变量，第一个参数为通道的起始编号 */
-		UpperMonitor::setDatas(1, test);
+		UpperMonitor::setDatas(1, humanLeg.controller->arm_dof.jointSpace_t.getElement(0,1)*10);
+		UpperMonitor::setDatas(2, humanLeg.controller->arm_dof.jointSpace_t.getElement(0,2)*10);
+		UpperMonitor::setDatas(3, humanLeg.controller->arm_dof.jointSpace_t.getElement(0,3)*10);
+		UpperMonitor::setDatas(4, humanLeg.controller->arm_dof.jointSpace_t.getElement(0,4)*10);
+		UpperMonitor::setDatas(5, humanLeg.controller->arm_dof.jointSpace_t.getElement(0,5)*10);
+		// UpperMonitor::setDatas(1, humanLeg.controller->arm_dof.testArray.getElement(0,1)*10);
+		// UpperMonitor::setDatas(2, humanLeg.controller->arm_dof.testArray.getElement(0,2)*10);
+		// UpperMonitor::setDatas(3, humanLeg.controller->arm_dof.testArray.getElement(0,3)*10);
+		// UpperMonitor::setDatas(4, humanLeg.controller->arm_dof.testArray.getElement(0,4)*10);
+		// UpperMonitor::setDatas(5, humanLeg.controller->arm_dof.testArray.getElement(0,5)*10);
 		//UpperMonitor::setDatas(3, data3, data4, data5);
 		//UpperMonitor::setDatas(6, data6, data7, data8, data9);
 		/* 选择串口id */

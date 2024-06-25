@@ -168,6 +168,12 @@ void robotMiddleware::link_check()
   is_slave_connet = (slave_link_count >= slave_link_threshold) ? false : true;
   host_link_count++;
   slave_link_count++;
+	if(host_link_count > 2*host_link_threshold){
+		host_link_count = 2*host_link_threshold;
+	}
+	if(slave_link_count > 2*slave_link_threshold){
+		slave_link_count = 2*slave_link_threshold;
+	}
 }
 
 /**

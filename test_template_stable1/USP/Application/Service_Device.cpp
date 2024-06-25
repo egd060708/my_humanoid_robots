@@ -27,6 +27,7 @@ TaskHandle_t FS_I6X_Handle;
 TaskHandle_t Rx_Referee_Handle;
 TaskHandle_t BETAFPV_Handle;
 TaskHandle_t VirtualCom_Handle;
+TaskHandle_t Help_Handle;
 /* Private function declarations ---------------------------------------------*/
 void tskDjiMotor(void *arg);
 void tskFS_I6X(void *arg);
@@ -35,7 +36,7 @@ void tskDR16(void *arg);
 void Rx_Referee(void *arg);
 void tskBETAFPV(void *arg);
 void tskVirtualCom(void *arg);
-bool is_goding = false;
+void tskHelp(void *arg);
 /* Function prototypes -------------------------------------------------------*/
 /**
  * @brief  Initialization of device management service
@@ -45,6 +46,8 @@ bool is_goding = false;
 void Service_Devices_Init(void)
 {
 	xTaskCreate(tskDjiMotor, "App.Motor", Huge_Stack_Size, NULL, PriorityNormal, &DjiMotor_Handle);
+	xTaskCreate(tskHelp, "App.Help", Huge_Stack_Size, NULL, PriorityNormal, &Help_Handle);
+
 #if USE_SRML_MPU6050
 	xTaskCreate(tskIMU, "App.IMU", Normal_Stack_Size, NULL, PrioritySuperHigh, &IMU_Handle);
 #endif
@@ -52,7 +55,7 @@ void Service_Devices_Init(void)
 #if USE_SRML_DR16
 	xTaskCreate(tskDR16, "App.DR16", Small_Stack_Size, NULL, PrioritySuperHigh, &DR16_Handle);
 #endif
-	xTaskCreate(tskBETAFPV, "App.BETAFPV", Small_Stack_Size, NULL, PrioritySuperHigh, &BETAFPV_Handle);
+	xTaskCreate(tskBETAFPV, "App.BETAFPV", Small_Stack_Size, NULL, PriorityHigh, &BETAFPV_Handle);
 
 #if USE_SRML_FS_I6X
 	xTaskCreate(tskFS_I6X, "App.FS_I6X", Small_Stack_Size, NULL, PrioritySuperHigh, &FS_I6X_Handle);
@@ -63,10 +66,31 @@ void Service_Devices_Init(void)
 #endif
 	
 #if USE_SRML_VIRTUAL_COM
-	xTaskCreate(tskVirtualCom, "App.VirtualCom", Normal_Stack_Size, NULL, PriorityHigh, &VirtualCom_Handle);
+//	xTaskCreate(tskVirtualCom, "App.VirtualCom", Normal_Stack_Size, NULL, PriorityHigh, &VirtualCom_Handle);
 #endif
 }
 
+void tskHelp(void *arg)
+{
+	/*	pre load for task	*/
+	rMiddleware.init(USART_TxPort,1);
+
+	TickType_t xLastWakeTime_t;
+	xLastWakeTime_t = xTaskGetTickCount();
+	UBaseType_t uxHighWaterMark;
+    
+   // 检测任务使用前的堆栈情况                         
+  uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
+	for (;;)
+	{
+		/* wait for next circle */
+		vTaskDelayUntil(&xLastWakeTime_t, 5);
+		// 检测任务运行之后的堆栈剩余情况          
+		humanLeg.State_Judge();
+		humanLeg.State_Return();
+		uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
+	}
+}
 
 /**
  * @brief <freertos> 大疆电机控制任务
@@ -74,17 +98,22 @@ void Service_Devices_Init(void)
 void tskDjiMotor(void *arg)
 {
 	/*	pre load for task	*/
-	rMiddleware.init(USART_TxPort,1);
+//	rMiddleware.init(USART_TxPort,1);
 
 	TickType_t xLastWakeTime_t;
 	xLastWakeTime_t = xTaskGetTickCount();
+	UBaseType_t uxHighWaterMark;
+    
+   // 检测任务使用前的堆栈情况                         
+  uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
 	for (;;)
 	{
 		/* wait for next circle */
 		vTaskDelayUntil(&xLastWakeTime_t, 5);
+		// 检测任务运行之后的堆栈剩余情况          
+    
 		humanLeg.State_Data_Update();
-		humanLeg.State_Judge();
-		humanLeg.State_Return();
+		uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
 
 		/* dji电机库使用示例 */
 		// 1. 电机控制

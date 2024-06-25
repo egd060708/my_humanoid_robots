@@ -7,10 +7,10 @@ class Arm_Controller_s
 {
 public:
 	myPID Motor_pid[jNum];
-	myMatrices<float> target_angle = myMatrices<float>(1, jNum);	//目标关节角度
-	myMatrices<float> current_angle = myMatrices<float>(1, jNum); //当前关节角度
-	myMatrices<float> targetSpace = myMatrices<float>(4, 4);			//目标齐次矩阵
-	myMatrices<float> oriWorkSpace = myMatrices<float>(4, 4);			//默认位型复位
+	myMatrices target_angle = myMatrices(1, jNum);	//目标关节角度
+	myMatrices current_angle = myMatrices(1, jNum); //当前关节角度
+	myMatrices targetSpace = myMatrices(4, 4);			//目标齐次矩阵
+	myMatrices oriWorkSpace = myMatrices(4, 4);			//默认位型复位
 	bool is_reset = false;																				//复位标志位
 																																// public:
 	Arm_Controller_s(rOrder _order)
@@ -110,46 +110,16 @@ inline void Arm_Controller_s<jNum>::updateAngle_t(const float _tangle[jNum])
 template <uint8_t jNum>
 inline void Arm_Controller_s<jNum>::updatePos_dt(float _droll, float _dpitch, float _dyaw, float _dx, float _dy, float _dz)
 {
-	myMatrices<float> Tpitch(4);
-	myMatrices<float> Tyaw(4);
-	myMatrices<float> Troll(4);
-	myMatrices<float> Tx(4);
-	myMatrices<float> Ty(4);
-	myMatrices<float> Tz(4);
-	const float Apitch[4 * 4] = {cosf(_dpitch), 0, sinf(_dpitch), 0,
-															 0, 1, 0, 0,
-															 -sinf(_dpitch), 0, cosf(_dpitch), 0,
-															 0, 0, 0, 1};
-	const float Ayaw[4 * 4] = {cosf(_dyaw), -sinf(_dyaw), 0, 0,
-														 sinf(_dyaw), cosf(_dyaw), 0, 0,
-														 0, 0, 1, 0,
-														 0, 0, 0, 1};
-	const float Aroll[4 * 4] = {1, 0, 0, 0,
-															0, cosf(_droll), -sinf(_droll), 0,
-															0, sinf(_droll), cosf(_droll), 0,
-															0, 0, 0, 1};
-	const float Ax[4 * 4] = {1, 0, 0, _dx,
-													 0, 1, 0, 0,
-													 0, 0, 1, 0,
-													 0, 0, 0, 1};
-	const float Ay[4 * 4] = {1, 0, 0, 0,
-													 0, 1, 0, _dy,
-													 0, 0, 1, 0,
-													 0, 0, 0, 1};
-	const float Az[4 * 4] = {1, 0, 0, 0,
-													 0, 1, 0, 0,
-													 0, 0, 1, _dz,
-													 0, 0, 0, 1};
-	Tpitch.setArray(Apitch, 4 * 4);
-	Tyaw.setArray(Ayaw, 4 * 4);
-	Troll.setArray(Aroll, 4 * 4);
-	Tx.setArray(Ax, 4 * 4);
-	Ty.setArray(Ay, 4 * 4);
-	Tz.setArray(Az, 4 * 4);
-	myMatrices<float> workSpace_t = arm_dof.workSpace_t;
-	workSpace_t = workSpace_t * Tx;
-	workSpace_t = workSpace_t * Ty;
-	workSpace_t = workSpace_t * Tz;
+	myMatrices Tpitch(4);
+	myMatrices Tyaw(4);
+	myMatrices Troll(4);
+	myMatrices Td(4);
+	Tpitch.rotateY_T(_dpitch);
+	Tyaw.rotateZ_T(_dyaw);
+	Troll.rotateX_T(_droll);
+	Td.transform_T(_dx,_dy,_dz);
+	myMatrices workSpace_t = arm_dof.workSpace_t;
+	workSpace_t = workSpace_t * Td;
 	workSpace_t = workSpace_t * Tpitch;
 	workSpace_t = workSpace_t * Tyaw;
 	workSpace_t = workSpace_t * Troll;
@@ -176,57 +146,22 @@ inline void Arm_Controller_s<jNum>::updatePos_dt(float _droll, float _dpitch, fl
 template <uint8_t jNum>
 inline void Arm_Controller_s<jNum>::updatePos_t(float _roll, float _pitch, float _yaw, float _x, float _y, float _z)
 {
-	myMatrices<float> Tpitch(4);
-	myMatrices<float> Tyaw(4);
-	myMatrices<float> Troll(4);
-	myMatrices<float> Tx(4);
-	myMatrices<float> Ty(4);
-	myMatrices<float> Tz(4);
+	myMatrices Tpitch(4);
+	myMatrices Tyaw(4);
+	myMatrices Troll(4);
+	myMatrices Td(4);
 	float roll = upper::constrain(_roll, arm_dof.workArrayCs.getElement(0, 0), arm_dof.workArrayCs.getElement(0, 1));
 	float pitch = upper::constrain(_pitch, arm_dof.workArrayCs.getElement(1, 0), arm_dof.workArrayCs.getElement(1, 1));
 	float yaw = upper::constrain(_yaw, arm_dof.workArrayCs.getElement(2, 0), arm_dof.workArrayCs.getElement(2, 1));
 	float x = upper::constrain(_x, arm_dof.workArrayCs.getElement(3, 0), arm_dof.workArrayCs.getElement(3, 1));
 	float y = upper::constrain(_y, arm_dof.workArrayCs.getElement(4, 0), arm_dof.workArrayCs.getElement(4, 1));
 	float z = upper::constrain(_z, arm_dof.workArrayCs.getElement(5, 0), arm_dof.workArrayCs.getElement(5, 1));
-	const float Apitch[4 * 4] = {cosf(pitch), 0, sinf(pitch), 0,
-															 0, 1, 0, 0,
-															 -sinf(pitch), 0, cosf(pitch), 0,
-															 0, 0, 0, 1};
-	const float Ayaw[4 * 4] = {cosf(yaw), -sinf(yaw), 0, 0,
-														 sinf(yaw), cosf(yaw), 0, 0,
-														 0, 0, 1, 0,
-														 0, 0, 0, 1};
-	const float Aroll[4 * 4] = {1, 0, 0, 0,
-															0, cosf(roll), -sinf(roll), 0,
-															0, sinf(roll), cosf(roll), 0,
-															0, 0, 0, 1};
-	const float Ax[4 * 4] = {1, 0, 0, x,
-													 0, 1, 0, 0,
-													 0, 0, 1, 0,
-													 0, 0, 0, 1};
-	const float Ay[4 * 4] = {1, 0, 0, 0,
-													 0, 1, 0, y,
-													 0, 0, 1, 0,
-													 0, 0, 0, 1};
-	const float Az[4 * 4] = {1, 0, 0, 0,
-													 0, 1, 0, 0,
-													 0, 0, 1, z,
-													 0, 0, 0, 1};
-	Tpitch.setArray(Apitch, 4 * 4);
-	Tyaw.setArray(Ayaw, 4 * 4);
-	Troll.setArray(Aroll, 4 * 4);
-	Tx.setArray(Ax, 4 * 4);
-	Ty.setArray(Ay, 4 * 4);
-	Tz.setArray(Az, 4 * 4);
-	myMatrices<float> workSpace_t(4);
-	const float orin[4 * 4] = {1, 0, 0, 0,
-														 0, 1, 0, 0,
-														 0, 0, 1, 0,
-														 0, 0, 0, 1};
-	workSpace_t.setArray(orin, 4 * 4);
-	workSpace_t = workSpace_t * Tx;
-	workSpace_t = workSpace_t * Ty;
-	workSpace_t = workSpace_t * Tz;
+	Tpitch.rotateY_T(pitch);
+	Tyaw.rotateZ_T(yaw);
+	Troll.rotateX_T(roll);
+	Td.transform_T(x,y,z);
+	myMatrices workSpace_t(4);
+	workSpace_t = Td;
 	workSpace_t = workSpace_t * Troll;
 	workSpace_t = workSpace_t * Tpitch;
 	workSpace_t = workSpace_t * Tyaw;
@@ -242,52 +177,22 @@ inline void Arm_Controller_s<jNum>::updatePos_t(float _roll, float _pitch, float
 template <uint8_t jNum>
 inline void Arm_Controller_s<jNum>::updatePos_t(float _endPoint[6])
 {
-	myMatrices<float> Tpitch(4);
-	myMatrices<float> Tyaw(4);
-	myMatrices<float> Troll(4);
-	myMatrices<float> Tx(4);
-	myMatrices<float> Ty(4);
-	myMatrices<float> Tz(4);
+	myMatrices Tpitch(4);
+	myMatrices Tyaw(4);
+	myMatrices Troll(4);
+	myMatrices Td(4);
 	float x = upper::constrain(_endPoint[0], arm_dof.workArrayCs.getElement(0, 0), arm_dof.workArrayCs.getElement(0, 1));
 	float y = upper::constrain(_endPoint[1], arm_dof.workArrayCs.getElement(1, 0), arm_dof.workArrayCs.getElement(1, 1));
 	float z = upper::constrain(_endPoint[2], arm_dof.workArrayCs.getElement(2, 0), arm_dof.workArrayCs.getElement(2, 1));
 	float roll = upper::constrain(_endPoint[3], arm_dof.workArrayCs.getElement(3, 0), arm_dof.workArrayCs.getElement(3, 1));
 	float pitch = upper::constrain(_endPoint[4], arm_dof.workArrayCs.getElement(4, 0), arm_dof.workArrayCs.getElement(4, 1));
 	float yaw = upper::constrain(_endPoint[5], arm_dof.workArrayCs.getElement(5, 0), arm_dof.workArrayCs.getElement(5, 1));
-	const float Apitch[4 * 4] = {cosf(pitch), 0, sinf(pitch), 0,
-															 0, 1, 0, 0,
-															 -sinf(pitch), 0, cosf(pitch), 0,
-															 0, 0, 0, 1};
-	const float Ayaw[4 * 4] = {cosf(yaw), -sinf(yaw), 0, 0,
-														 sinf(yaw), cosf(yaw), 0, 0,
-														 0, 0, 1, 0,
-														 0, 0, 0, 1};
-	const float Aroll[4 * 4] = {1, 0, 0, 0,
-															0, cosf(roll), -sinf(roll), 0,
-															0, sinf(roll), cosf(roll), 0,
-															0, 0, 0, 1};
-	const float Ax[4 * 4] = {1, 0, 0, x,
-													 0, 1, 0, 0,
-													 0, 0, 1, 0,
-													 0, 0, 0, 1};
-	const float Ay[4 * 4] = {1, 0, 0, 0,
-													 0, 1, 0, y,
-													 0, 0, 1, 0,
-													 0, 0, 0, 1};
-	const float Az[4 * 4] = {1, 0, 0, 0,
-													 0, 1, 0, 0,
-													 0, 0, 1, z,
-													 0, 0, 0, 1};
-	Tpitch.setArray(Apitch, 4 * 4);
-	Tyaw.setArray(Ayaw, 4 * 4);
-	Troll.setArray(Aroll, 4 * 4);
-	Tx.setArray(Ax, 4 * 4);
-	Ty.setArray(Ay, 4 * 4);
-	Tz.setArray(Az, 4 * 4);
-	myMatrices<float> workSpace_t(4);
-	workSpace_t = Tx;
-	workSpace_t = workSpace_t * Ty;
-	workSpace_t = workSpace_t * Tz;
+	Tpitch.rotateY_T(pitch);
+	Tyaw.rotateZ_T(yaw);
+	Troll.rotateX_T(roll);
+	Td.transform_T(x,y,z);
+	myMatrices workSpace_t(4);
+	workSpace_t = Td;
 	workSpace_t = workSpace_t * Troll;
 	workSpace_t = workSpace_t * Tyaw;
 	workSpace_t = workSpace_t * Tpitch;

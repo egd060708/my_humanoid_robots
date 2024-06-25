@@ -124,7 +124,7 @@ Humanoid_Leg_Classdef::Humanoid_Leg_Classdef(Arm_Controller_s<5> *_controller, r
                                 PI * 0.1, PI * -0.3,
                                 PI * 0.3, PI * -0.5,
                                 PI * 0.6, 0,
-                                PI * 0.3, PI * -0.1};
+                                PI * 0.3, PI * -0.3};
   const float workArrCs[2 * 6] = {0.3, -0.3,
                                   0.2, -0.05,
                                   -0.2, -0.65,

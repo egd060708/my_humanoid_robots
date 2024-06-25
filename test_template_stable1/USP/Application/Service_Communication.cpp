@@ -129,7 +129,7 @@ void Task_CAN1Receive(void *arg)
     if (xQueueReceive(CAN1_RxPort, &CAN_RxCOB, portMAX_DELAY) == pdPASS)
     {
       // lkmotor.update(CAN_RxCOB.ID, CAN_RxCOB.Data);
-      rMiddleware.Motor_Rec(&CAN_RxCOB);
+       rMiddleware.Motor_Rec(&CAN_RxCOB);
       // 这里调用自定义的电机can数据更新接口
       // 注意！！！如果接口里函数嵌套、临时变量很多，请考虑该任务栈大小
 
@@ -165,7 +165,7 @@ void Task_CAN2Receive(void *arg)
     if (xQueueReceive(CAN2_RxPort, &CAN_RxCOB, portMAX_DELAY) == pdPASS)
     {
       // lkmotor.update(CAN_RxCOB.ID, CAN_RxCOB.Data);
-      rMiddleware.Motor_Rec(&CAN_RxCOB);
+       rMiddleware.Motor_Rec(&CAN_RxCOB);
       // 这里调用自定义的电机can数据更新接口
       // 注意！！！如果接口里函数嵌套、临时变量很多，请考虑该任务栈大小
 
@@ -255,7 +255,7 @@ void Task_UsartReceive(void *arg)
       switch (Usart_RxCOB.port_num)
       {
       case 1:
-//        rMiddleware.processRecSlave((slaveCom_s *)Usart_RxCOB.address);
+        rMiddleware.processRecSlave((slaveCom_s *)Usart_RxCOB.address);
         break;
       case 2:
         break;
@@ -369,7 +369,7 @@ uint32_t Referee_recv_Callback(uint8_t *Recv_Data, uint16_t ReceiveLen)
 #if USE_SRML_VIRTUAL_COM
 void User_VirtualComRecCpltCallback(uint8_t *Recv_Data, uint16_t ReceiveLen)
 {
-  rMiddleware.processRecHost(Recv_Data, ReceiveLen);
+   rMiddleware.processRecHost(Recv_Data, ReceiveLen);
 }
 #endif
 
