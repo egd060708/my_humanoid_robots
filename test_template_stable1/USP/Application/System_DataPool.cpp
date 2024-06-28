@@ -64,7 +64,7 @@ abstractMotor<Motor_C620> absM3508(2);
 abstractMotor<Motor_GM6020> absM6020[2] = {abstractMotor<Motor_GM6020>(1), abstractMotor<Motor_GM6020>(3)};
 
 // 瓴控电机通信测试
-LkMotorBass lkmotor(1);
+LkMotorBass lkmotor(2);
 
 CanTestStructdef can1def = {};
 CanTestStructdef can2def = {};
@@ -73,6 +73,7 @@ CAN_COB can1Cob = {};
 CAN_COB can2Cob = {};
 
 // 自定义控制类型
+LkMotorBass realjointMotor[5] = {LkMotorBass(1),LkMotorBass(2),LkMotorBass(3),LkMotorBass(4),LkMotorBass(5)};
 Arm_Controller_s<5> fiveDofCtrl(rOrder::XZY);
 robotMiddleware rMiddleware(&BETAFPV);
 Humanoid_Leg_Classdef humanLeg(&fiveDofCtrl,&rMiddleware);

@@ -7,7 +7,11 @@
  **/
 /* Includes ------------------------------------------------------------------*/
 #include "internal.h"
-
+float ch[6];
+extern float kp;
+extern float ki;
+extern float i_max;
+extern float o_max;
 /* Private define ------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 TaskHandle_t UpperMonitor_Handle;
@@ -45,12 +49,12 @@ void Task_UpperMonitor(void *arg)
 	TickType_t xLastWakeTime_t;
 	xLastWakeTime_t = xTaskGetTickCount();
 
-//	UpperMonitor::init(2);// 开启上位机修改变量功能，与发送无关，不使用也能照常发送
+	UpperMonitor::init(2);// 开启上位机修改变量功能，与发送无关，不使用也能照常发送
 	// 分配编号给被修改的变量
-	// UpperMonitor::bind_Modified_Var(0, ...);
-	// UpperMonitor::bind_Modified_Var(1, ...);
-	// UpperMonitor::bind_Modified_Var(2, ...);
-	// UpperMonitor::bind_Modified_Var(3, ...);
+	UpperMonitor::bind_Modified_Var(0, &kp);
+	UpperMonitor::bind_Modified_Var(1, &ki);
+	UpperMonitor::bind_Modified_Var(2, &i_max);
+	UpperMonitor::bind_Modified_Var(3, &o_max);
 	// UpperMonitor::bind_Modified_Var(4, ...);
 	float test = 0;
 	/* Infinite loop */
@@ -59,11 +63,12 @@ void Task_UpperMonitor(void *arg)
 		/* Wait for the next cycle */
 		vTaskDelayUntil(&xLastWakeTime_t, 5);
 		/* 在此处传入需要观察的变量，第一个参数为通道的起始编号 */
-		UpperMonitor::setDatas(1, humanLeg.controller->arm_dof.jointSpace_t.getElement(0,1)*10);
-		UpperMonitor::setDatas(2, humanLeg.controller->arm_dof.jointSpace_t.getElement(0,2)*10);
-		UpperMonitor::setDatas(3, humanLeg.controller->arm_dof.jointSpace_t.getElement(0,3)*10);
-		UpperMonitor::setDatas(4, humanLeg.controller->arm_dof.jointSpace_t.getElement(0,4)*10);
-		UpperMonitor::setDatas(5, humanLeg.controller->arm_dof.jointSpace_t.getElement(0,5)*10);
+		UpperMonitor::setDatas(1, ch[0]);
+		UpperMonitor::setDatas(2, ch[1]);
+		UpperMonitor::setDatas(3, ch[2]);
+		UpperMonitor::setDatas(4, ch[3]);
+		UpperMonitor::setDatas(5, ch[4]);
+		UpperMonitor::setDatas(6, ch[5]);
 		// UpperMonitor::setDatas(1, humanLeg.controller->arm_dof.testArray.getElement(0,1)*10);
 		// UpperMonitor::setDatas(2, humanLeg.controller->arm_dof.testArray.getElement(0,2)*10);
 		// UpperMonitor::setDatas(3, humanLeg.controller->arm_dof.testArray.getElement(0,3)*10);

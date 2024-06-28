@@ -40,7 +40,7 @@
 // #define RATIO_RECEIVE_VOLTAGE 0.1f
 // #define RATIO_RECEIVE_ANGLE 0.01f
 // #define RATIO_ENCODER_TO_ANGLE 360 / 65536.f
-// #define RATIO_CURRENT_TO_A 16.5f / 2048.f 
+// #define RATIO_CURRENT_TO_A 16.5f / 2048.f
 // //16T是0.32f
 // #define TORQUE_CONSTANT 0.32f
 // 35T是0.81f
@@ -91,16 +91,16 @@
  */
 CAN_COB &MotorMsgPack(CAN_COB &motor_msg, LkMotorBass &motor)
 {
-    int16_t constrain_Out = motor.getData().targetCurrent;
-    constrain_Out = std_lib::constrain(constrain_Out, static_cast<int16_t>(-motor.MAX_CURRENT()), motor.MAX_CURRENT());
+  int16_t constrain_Out = motor.getData().targetCurrent;
+  constrain_Out = std_lib::constrain(constrain_Out, static_cast<int16_t>(-motor.MAX_CURRENT()), motor.MAX_CURRENT());
 
-    motor_msg.Data[motor.getData().motorId * 2 - 2] = (constrain_Out >> 8) & 0xff;
-    motor_msg.Data[motor.getData().motorId * 2 - 1] = constrain_Out & 0xff;
-    return motor_msg;
+  motor_msg.Data[motor.getData().motorId * 2 - 2] = (constrain_Out >> 8) & 0xff;
+  motor_msg.Data[motor.getData().motorId * 2 - 1] = constrain_Out & 0xff;
+  return motor_msg;
 }
 /**
  * @brief 电机类构造函数
- * 
+ *
  * @param _id 电机id（1-8）
  */
 LkMotorBass::LkMotorBass(uint8_t _id)
@@ -111,7 +111,7 @@ LkMotorBass::LkMotorBass(uint8_t _id)
 }
 /**
  * @brief 电机类构造函数（无需认为计算ID号）
- * 
+ *
  * @param id1 电机背面序号为 1 的id调节开关是否为ON，是则传入非0数字（最好为1，因为是bool类型，传入非0都会变成1），否则为0
  * @param id2 电机背面序号为 2 的id调节开关是否为ON，是则传入非0数字（最好为1，因为是bool类型，传入非0都会变成1），否则为0
  * @param id3 电机背面序号为 3 的id调节开关是否为ON，是则传入非0数字（最好为1，因为是bool类型，传入非0都会变成1），否则为0
@@ -120,13 +120,13 @@ LkMotorBass::LkMotorBass(uint8_t _id)
  */
 LkMotorBass::LkMotorBass(bool id1, bool id2, bool id3)
 {
-	dataPool.motorId = 1 + (uint8_t)id1+ 2*(uint8_t)id2 + 4*(uint8_t)id3;
-	canSendStruct.ID = getComId();
-	canSendStruct.DLC = 8;
+  dataPool.motorId = 1 + (uint8_t)id1 + 2 * (uint8_t)id2 + 4 * (uint8_t)id3;
+  canSendStruct.ID = getComId();
+  canSendStruct.DLC = 8;
 }
 /**
  * @brief 电机类成员初始化
- * 
+ *
  * @param _sendQueue 传入发送队列
  * 不能把传入发送队列放在构造函数中，因为作为全局变量声明，是在队列创建之前的，故只会传入NULL的队列句柄
  */
@@ -142,7 +142,7 @@ void LkMotorBass::init(QueueHandle_t _sendQueue)
 
 /**
  * @brief 写入PID参数到RAM
- * 
+ *
  * @param _iqKp 转矩环Kp
  * @param _iqKi 转矩环Ki
  * @param _angleKp 角度环Kp
@@ -163,7 +163,7 @@ void LkMotorBass::writePidToRAM(int8_t _iqKp, int8_t _iqKi, int8_t _angleKp, int
 }
 /**
  * @brief 写入PID参数到ROM
- * 
+ *
  * @param _iqKp 转矩环Kp
  * @param _iqKi 转矩环Ki
  * @param _angleKp 角度环Kp
@@ -184,7 +184,7 @@ void LkMotorBass::writePidToROM(int8_t _iqKp, int8_t _iqKi, int8_t _angleKp, int
 }
 /**
  * @brief 写入特定编码器值作为零点
- * 
+ *
  * @param _offset 零点编码器值
  */
 void LkMotorBass::writeEncoderOffset(uint16_t _offset)
@@ -196,7 +196,7 @@ void LkMotorBass::writeEncoderOffset(uint16_t _offset)
 }
 /**
  * @brief 将当前编码器值作为零点
- * 
+ *
  */
 void LkMotorBass::writeNowEncoderAsOffset()
 {
@@ -205,7 +205,7 @@ void LkMotorBass::writeNowEncoderAsOffset()
 }
 /**
  * @brief 写入加速度到RAM
- * 
+ *
  * @param _accel 待写入的加速度，单位为1dps/LSB
  */
 void LkMotorBass::writeAccelToRAM(int32_t _accel)
@@ -219,7 +219,7 @@ void LkMotorBass::writeAccelToRAM(int32_t _accel)
 }
 /**
  * @brief 转矩开环控制模式(仅在MS系列电机上实现)
- * 
+ *
  * @param _targetTorque 目标扭矩，单位为N*m
  */
 void LkMotorBass::iqOpenControl(float _targetTorque)
@@ -245,7 +245,7 @@ void LkMotorBass::iqOpenControl_Current(int16_t _targetCurrent)
 }
 /**
  * @brief 转矩闭环控制模式（仅在MF和MG上实现）
- * 
+ *
  * @param _targetTorque 目标扭矩，单位为N*m
  */
 void LkMotorBass::iqCloseControl(float _targetTorque)
@@ -271,7 +271,7 @@ void LkMotorBass::iqCloseControl_Current(int16_t _targetCurrent)
 }
 /**
  * @brief 速度闭环控制模式
- * 
+ *
  * @param _targetRPM 目标转速，单位为RPM
  */
 void LkMotorBass::speedControl(float _targetRPM)
@@ -286,7 +286,7 @@ void LkMotorBass::speedControl(float _targetRPM)
 }
 /**
  * @brief 总角度闭环模式1
- * 
+ *
  * @param _targetAngle 目标总角度，单位为°
  */
 void LkMotorBass::angleTotalControl_1(float _targetAngle)
@@ -301,7 +301,7 @@ void LkMotorBass::angleTotalControl_1(float _targetAngle)
 }
 /**
  * @brief 总角度闭环模式2
- * 
+ *
  * @param _targetAngle 目标总角度，单位为°
  * @param _speedLimit 速度限制，单位为RPM
  */
@@ -320,28 +320,30 @@ void LkMotorBass::angleTotalControl_2(float _targetAngle, float _speedLimit)
 }
 /**
  * @brief 单圈角度闭环模式1
- * 
+ *
  * @param _targetAngle 目标总角度，单位为°
  */
-void LkMotorBass::angleSingleControl_1(float _targetAngle)
+void LkMotorBass::angleSingleControl_1(float _targetAngle, uint8_t _spinDirection)
 {
   int16_t targetAngle = _targetAngle * 100;
   canSendStruct.Data[0] = ORDER_ANGLE_CLOSE_LOOP_3;
+  canSendStruct.Data[1] = _spinDirection;
   canSendStruct.Data[4] = targetAngle & 0xff;
   canSendStruct.Data[5] = (targetAngle >> 8) & 0xff;
   sendData();
 }
 /**
  * @brief 单圈角度闭环模式2
- * 
+ *
  * @param _targetAngle 目标总角度，单位为°
  * @param _speedLimit 速度限制，单位为RPM
  */
-void LkMotorBass::angleSingleControl_2(float _targetAngle, float _speedLimit)
+void LkMotorBass::angleSingleControl_2(float _targetAngle, uint8_t _spinDirection, float _speedLimit)
 {
   int16_t speedLimit = _speedLimit * 6;
   int16_t targetAngle = _targetAngle * 100;
   canSendStruct.Data[0] = ORDER_ANGLE_CLOSE_LOOP_4;
+  canSendStruct.Data[1] = _spinDirection;
   canSendStruct.Data[2] = speedLimit & 0xff;
   canSendStruct.Data[3] = (speedLimit >> 8) & 0xff;
   canSendStruct.Data[4] = targetAngle & 0xff;
@@ -350,7 +352,7 @@ void LkMotorBass::angleSingleControl_2(float _targetAngle, float _speedLimit)
 }
 /**
  * @brief 增量式角度闭环模式1
- * 
+ *
  * @param _targetAngle 目标总角度，单位为°
  */
 void LkMotorBass::angleIncrementControl_1(float _targetAngle)
@@ -365,7 +367,7 @@ void LkMotorBass::angleIncrementControl_1(float _targetAngle)
 }
 /**
  * @brief 增量式角度闭环模式2
- * 
+ *
  * @param _targetAngle 目标总角度，单位为°
  * @param _speedLimit 速度限制，单位为RPM
  */
@@ -384,7 +386,7 @@ void LkMotorBass::angleIncrementControl_2(float _targetAngle, float _speedLimit)
 }
 /**
  * @brief 设置目标电流（多电机模式使用）
- * 
+ *
  * @param _current 目标电流，在±2000
  */
 void LkMotorBass::setTatgetCurrent(int16_t _current)
@@ -394,7 +396,7 @@ void LkMotorBass::setTatgetCurrent(int16_t _current)
 };
 /**
  * @brief 清除电机错误标志位
- * 
+ *
  */
 void LkMotorBass::cleanErrorState()
 {
@@ -403,7 +405,7 @@ void LkMotorBass::cleanErrorState()
 };
 /**
  * @brief 关闭电机
- * 
+ *
  */
 void LkMotorBass::closeMotor()
 {
@@ -412,7 +414,7 @@ void LkMotorBass::closeMotor()
 };
 /**
  * @brief 停止电机
- * 
+ *
  */
 void LkMotorBass::stopMotor()
 {
@@ -421,7 +423,7 @@ void LkMotorBass::stopMotor()
 };
 /**
  * @brief 开启电机
- * 
+ *
  */
 void LkMotorBass::startMotor()
 {
@@ -430,13 +432,13 @@ void LkMotorBass::startMotor()
 };
 /**
  * @brief 电机回调数据包处理函数
- * 
+ *
  * @param canRecID 接收CAN的ID
  * @param can_rx_data can接收数组
  */
 bool LkMotorBass::update(uint32_t canRecID, uint8_t can_rx_data[])
 {
-  if(canRecID != getComId())
+  if (canRecID != getComId())
     return 0;
   switch (can_rx_data[0])
   {
@@ -549,7 +551,7 @@ void LkMotorBass::updateEncoderOffset(uint8_t can_rx_data[])
 void LkMotorBass::updateSingleAngle(uint8_t can_rx_data[])
 {
   uint8_t temp[4] = {can_rx_data[4], can_rx_data[5], can_rx_data[6], can_rx_data[7]};
-  //dataPool.singleAngle = *reinterpret_cast<int32_t *>(&can_rx_data[4]) * RATIO_RECEIVE_ANGLE; //会进入硬件中断HardFault_Handler,原因未知
+  // dataPool.singleAngle = *reinterpret_cast<int32_t *>(&can_rx_data[4]) * RATIO_RECEIVE_ANGLE; //会进入硬件中断HardFault_Handler,原因未知
   dataPool.singleAngle = *reinterpret_cast<int32_t *>(temp) * RATIO_RECEIVE_ANGLE;
 }
 
@@ -584,7 +586,7 @@ void LkMotorBass::updateMotorState3(uint8_t can_rx_data[])
 }
 /**
  * @brief 读取pid参数
- * 
+ *
  */
 void LkMotorBass::readPid()
 {
@@ -593,7 +595,7 @@ void LkMotorBass::readPid()
 };
 /**
  * @brief 读取加速度
- * 
+ *
  */
 void LkMotorBass::readAccel()
 {
@@ -602,7 +604,7 @@ void LkMotorBass::readAccel()
 };
 /**
  * @brief 读取编码器值
- * 
+ *
  */
 void LkMotorBass::readEncoder()
 {
@@ -611,7 +613,7 @@ void LkMotorBass::readEncoder()
 };
 /**
  * @brief 读取总已转角度
- * 
+ *
  */
 void LkMotorBass::readTotalAngle()
 {
@@ -620,7 +622,7 @@ void LkMotorBass::readTotalAngle()
 };
 /**
  * @brief 读取单圈角度
- * 
+ *
  */
 void LkMotorBass::readSingleAngle()
 {
@@ -629,7 +631,7 @@ void LkMotorBass::readSingleAngle()
 };
 /**
  * @brief 读取电机标志位1与错误标志位
- * 
+ *
  */
 void LkMotorBass::readMotorState1_errorState()
 {
@@ -638,7 +640,7 @@ void LkMotorBass::readMotorState1_errorState()
 };
 /**
  * @brief 读取电机标志位2
- * 
+ *
  */
 void LkMotorBass::readMotorState2()
 {
@@ -647,7 +649,7 @@ void LkMotorBass::readMotorState2()
 };
 /**
  * @brief 读取电机标志位3
- * 
+ *
  */
 void LkMotorBass::readMotorState3()
 {

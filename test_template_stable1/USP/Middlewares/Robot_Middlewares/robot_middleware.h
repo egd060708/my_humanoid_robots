@@ -5,7 +5,7 @@
 #include "BetaFPV.h"
 
 // 判断是左腿还是右腿，预编译中间层内容
-#define L_LEG 1
+#define L_LEG 0
 
 const uint16_t host_link_threshold = 40;
 const uint16_t slave_link_threshold = 40;
@@ -44,15 +44,24 @@ typedef struct _slaveCom_s
 
 class robotMiddleware
 {
-private:
+public:
 	BETAFPV_Classdef *remote; //遥控器类型指针
 
 public:
 	robotMiddleware(BETAFPV_Classdef *_remote);
 	void init(QueueHandle_t _Usart_TxPort, uint8_t _port_num);
 
-	abstractMotor<LkMotorBass> jointMotor[5] = {LkMotorBass(1), LkMotorBass(2), LkMotorBass(3), LkMotorBass(4), LkMotorBass(5)}; //单腿五个驱动关节
-	void jointInit(LkMotorBass _motor[5]);
+	// abstractMotor<LkMotorBass> jointMotor[5] = {LkMotorBass(1), LkMotorBass(2), LkMotorBass(3), LkMotorBass(4), LkMotorBass(1)}; //单腿五个驱动关节
+	LkMotorBass realjointMotor[5] = {LkMotorBass(1),LkMotorBass(3),LkMotorBass(2),LkMotorBass(4),LkMotorBass(1)};
+	float offsetAngle[5] = {0};
+	float startAngle[5] = {0};
+	float direction[5] = {0};
+	float ctrlAngle[5] = {0};
+	bool is_start[5] = {false};
+	myPID jointPID[5];
+	float lastTarget[5] = {0};
+	void jointInit();
+	void jointGetStartAngle();
 
 	hostCom_s sendHostPack; // 发送上位机数据
 	hostCom_s recHostPack;	// 接收上位机数据
@@ -76,7 +85,7 @@ public:
 	USART_COB Usart_RxCOB;
 	USART_COB Usart_TxCOB;
 
-	void ctrlActuate(const float _angle[5], const float _speed[5]);
+	void ctrlActuate(const float _angle[5], float _time);
 	void noCtrl();
 	void Motor_Rec(CAN_COB *CAN_RxMsg);
 	void link_check();

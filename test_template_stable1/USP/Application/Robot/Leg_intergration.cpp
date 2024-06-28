@@ -7,6 +7,12 @@ PreCtrl_State preCtrlState;
 Ctrl_State ctrlState;
 Debug_State debugState;
 
+extern float ch[6];
+float kp = 30;
+float ki = 5;
+float i_max = 5;
+float o_max = 40;
+
 /**
  * @brief 重置状态机
  *
@@ -56,8 +62,8 @@ void PreCtrl_State::State_Handler()
   {
     context->controller->updatePos_t(context->middleware->recSlavePack.endPoint);
   }
-  float speed[5] = {10};
-  context->middleware->ctrlActuate(context->controller->target_angle.getArray(), speed);
+  // float speed[5] = {10};
+  // context->middleware->ctrlActuate(context->controller->target_angle.getArray(), speed);
   if (context->controller->is_reaching())
   {
     context->Status_Switching(&ctrlState);
@@ -86,7 +92,7 @@ void Ctrl_State::State_Handler()
     // 计算速度并且转为RPM
     speed[i] = (context->controller->target_angle.getElement(0, i) - context->controller->current_angle.getElement(0, i)) * 60 / 2 / PI / context->middleware->recHostPack.dt;
   }
-  context->middleware->ctrlActuate(context->controller->target_angle.getArray(), speed);
+  // context->middleware->ctrlActuate(context->controller->target_angle.getArray(), speed);
 }
 
 /**
@@ -96,9 +102,57 @@ void Ctrl_State::State_Handler()
 void Debug_State::State_Handler()
 {
   context->state_flag = sMachine::DEBUG;
-	context->controller->updatePos_t(context->debug_endPoint);
-//	context->controller->updateAngle_t(context->debug_joint_t);
-  context->middleware->noCtrl();
+  context->controller->updatePos_t(context->debug_endPoint);
+  //	context->controller->updateAngle_t(context->debug_joint_t);
+
+  // float speed[5] = {10};
+  // myPID anglePID;
+  // anglePID.SetPIDParam(kp,ki,0,i_max,o_max);
+  // context->middleware->ctrlActuate(context->realAngle, speed);
+  if(L_LEG==1){
+    context->middleware->sendSlavePack.ctrl_enable = context->middleware->ctrl_enable;
+    context->middleware->sendSlave();
+    if(context->middleware->remote->getData().SD == SW_UP)
+    {
+      // context->middleware->ctrlActuate(context->controller->target_angle.getArray(),context->test_t);
+
+
+      // float angle = (context->test_angle / context->middleware->direction[0] + context->middleware->offsetAngle[0]);
+      // anglePID.Target = angle;
+      // anglePID.Current = context->middleware->realjointMotor[0].getData().singleAngle;
+      // ch[0] = anglePID.Target;
+      // ch[1] = anglePID.Current;
+      // anglePID.Adjust();
+      // context->middleware->realjointMotor[0].speedControl(anglePID.Out);
+    }
+    else
+    {
+      context->middleware->noCtrl();
+    }
+  }
+  else{
+    if(context->middleware->ctrl_enable == true)
+    {
+      // context->middleware->ctrlActuate(context->controller->target_angle.getArray(),context->test_t);
+
+      // float angle = (context->test_angle / context->middleware->direction[0] + context->middleware->offsetAngle[0]);
+      // anglePID.Target = angle;
+      // anglePID.Current = context->middleware->realjointMotor[0].getData().singleAngle;
+      // ch[0] = anglePID.Target;
+      // ch[1] = anglePID.Current;
+      // anglePID.Adjust();
+      // context->middleware->realjointMotor[0].speedControl(anglePID.Out);
+    }
+    else
+    {
+      context->middleware->noCtrl();
+    }
+  }
+
+  // if(context->is_offset==true&&context->real_offset==false){
+  //   context->real_offset = true;
+  //   context->middleware->realjointMotor[2].writeNowEncoderAsOffset();
+  // }
 }
 
 /**
@@ -152,13 +206,14 @@ void Humanoid_Leg_Classdef::State_Data_Update()
   middleware->link_check();
   // 更新控制使能状态
   middleware->judge_ctrl_enable();
+  // 更新电机初始状态
+  middleware->jointGetStartAngle();
   // 机械臂控制，更新电机状态，正运动学计算当前姿态，逆运动学求解目标姿态
-  float jointAngle[5];
   for (int i = 0; i < 5; i++)
   {
-    jointAngle[i] = middleware->jointMotor->getMotorTotalAngle();
+    realAngle[i] = (middleware->realjointMotor[i].getData().totalAngleLocal + middleware->startAngle[i] - middleware->offsetAngle[i]) * middleware->direction[i];
   }
-  controller->updateAngle_c(jointAngle);
+  controller->updateAngle_c(realAngle);
 }
 
 /**

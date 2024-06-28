@@ -32,25 +32,25 @@ namespace mM
     private:
         uint16_t rows;
         uint16_t cols;
-        // float data[16];
-        float *data;
+        float data[16];
+        // float *data;
 
     public:
         /*析构函数*/
         ~myMatrices()
         {
-            delete[] data;
+            // delete[] data;
         }
         /* 行列构造 */
         myMatrices(uint16_t rows, uint16_t cols) : rows(rows), cols(cols)
         {
-            data = new float[rows * cols];
+            // data = new float[rows * cols];
             // clear(0);
         }
         /* 方阵构造 */
         myMatrices(uint16_t n) : rows(n), cols(n)
         {
-            data = new float[rows * cols];
+            // data = new float[rows * cols];
             // clear(0);
         }
 

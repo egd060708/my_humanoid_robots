@@ -121,8 +121,8 @@ public:
     void speedControl(float _targetRPM);                                 // 速度闭环控制
     void angleTotalControl_1(float _targetAngle);                        // 多圈角度闭环控制模式1
     void angleTotalControl_2(float _targetAngle, float _speedLimit);     // 多圈角度闭环控制模式2
-    void angleSingleControl_1(float _targetAngle);                       // 单圈角度闭环控制模式1
-    void angleSingleControl_2(float _targetAngle, float _speedLimit);    // 单圈角度闭环控制模式2
+    void angleSingleControl_1(float _targetAngle, uint8_t _spinDirection);                       // 单圈角度闭环控制模式1
+    void angleSingleControl_2(float _targetAngle, uint8_t _spinDirection, float _speedLimit);    // 单圈角度闭环控制模式2
     void angleIncrementControl_1(float _targetAngle);                    // 角度增量闭环控制模式1
     void angleIncrementControl_2(float _targetAngle, float _speedLimit); // 角度增量闭环控制模式2
 

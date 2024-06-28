@@ -55,7 +55,7 @@ void Service_Devices_Init(void)
 #if USE_SRML_DR16
 	xTaskCreate(tskDR16, "App.DR16", Small_Stack_Size, NULL, PrioritySuperHigh, &DR16_Handle);
 #endif
-	xTaskCreate(tskBETAFPV, "App.BETAFPV", Small_Stack_Size, NULL, PriorityHigh, &BETAFPV_Handle);
+	xTaskCreate(tskBETAFPV, "App.BETAFPV", Small_Stack_Size, NULL, PrioritySuperHigh, &BETAFPV_Handle);
 
 #if USE_SRML_FS_I6X
 	xTaskCreate(tskFS_I6X, "App.FS_I6X", Small_Stack_Size, NULL, PrioritySuperHigh, &FS_I6X_Handle);
@@ -98,7 +98,39 @@ void tskHelp(void *arg)
 void tskDjiMotor(void *arg)
 {
 	/*	pre load for task	*/
-//	rMiddleware.init(USART_TxPort,1);
+
+	rMiddleware.jointInit();
+
+	// vTaskDelay(10);
+  // realjointMotor[HIP_ROLL].init(CAN1_TxPort);
+  // realjointMotor[HIP_ROLL].setTorqueConstant(0.07);
+  // realjointMotor[HIP_ROLL].setCurrent2ARatio(33.f / 2048.f);
+	// vTaskDelay(2);
+  // realjointMotor[HIP_ROLL].startMotor();
+  // vTaskDelay(10);
+  // realjointMotor[HIP_PITCH].init(CAN1_TxPort);
+  // realjointMotor[HIP_PITCH].setTorqueConstant(0.22);
+  // realjointMotor[HIP_PITCH].setCurrent2ARatio(33.f / 2048.f);
+	// vTaskDelay(2);
+  // realjointMotor[HIP_PITCH].startMotor();
+  // vTaskDelay(10);
+  // realjointMotor[HIP_YAW].init(CAN1_TxPort);
+  // realjointMotor[HIP_YAW].setTorqueConstant(0.1);
+  // realjointMotor[HIP_YAW].setCurrent2ARatio(33.f / 2048.f);
+	// vTaskDelay(2);
+  // realjointMotor[HIP_YAW].startMotor();
+  // vTaskDelay(10);
+  // realjointMotor[KNEE].init(CAN2_TxPort);
+  // realjointMotor[KNEE].setTorqueConstant(0.22);
+  // realjointMotor[KNEE].setCurrent2ARatio(33.f / 2048.f);
+	// vTaskDelay(2);
+  // realjointMotor[KNEE].startMotor();
+  // vTaskDelay(10);
+  // realjointMotor[ANKLE].init(CAN2_TxPort);
+  // realjointMotor[ANKLE].setTorqueConstant(0.07);
+  // realjointMotor[ANKLE].setCurrent2ARatio(33.f / 2048.f);
+	// vTaskDelay(2);
+  // realjointMotor[ANKLE].startMotor();
 
 	TickType_t xLastWakeTime_t;
 	xLastWakeTime_t = xTaskGetTickCount();
@@ -113,6 +145,12 @@ void tskDjiMotor(void *arg)
 		// 检测任务运行之后的堆栈剩余情况          
     
 		humanLeg.State_Data_Update();
+		// lkmotor.iqCloseControl_Current(0);
+		// realjointMotor[0].iqCloseControl_Current(0);
+		// realjointMotor[1].iqCloseControl_Current(0);
+		// realjointMotor[2].iqCloseControl_Current(0);
+		// realjointMotor[3].iqCloseControl_Current(0);
+		// realjointMotor[4].iqCloseControl_Current(0);
 		uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
 
 		/* dji电机库使用示例 */

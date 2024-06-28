@@ -99,7 +99,7 @@ extern abstractMotor<Motor_C620> absM3508;
 extern abstractMotor<Motor_GM6020> absM6020[2];
 
 extern LkMotorBass lkmotor;
-
+extern LkMotorBass realjointMotor[5];
 extern Arm_Controller_s<5> fiveDofCtrl;
 extern robotMiddleware rMiddleware;
 extern Humanoid_Leg_Classdef humanLeg;

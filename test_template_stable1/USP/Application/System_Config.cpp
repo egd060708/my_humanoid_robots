@@ -46,7 +46,7 @@ void System_Device_Init(void)
 
   // CAN_Filter_Mask_Config(1, CanFilter_0 | CanFifo_0 | Can_STDID, 0x201, 0x700);
   // CAN_Filter_Mask_Config(2, CanFilter_14 | CanFifo_0 | Can_STDID, 0x201, 0x700);
-	CAN_Filter_Mask_Config(1, CanFilter_1 | CanFifo_0 | Can_STDID, 0x140, 0x1FFFFFF8); // 瓴控电机
+	CAN_Filter_Mask_Config(1, CanFilter_5 | CanFifo_0 | Can_STDID, 0x140, 0x1FFFFFF8); // 瓴控电机
 //	CAN_Filter_Mask_Config(1, CanFilter_2 | CanFifo_0 | Can_STDID, 0x140, 0x1FFFFFFF); // 瓴控电机
 //	CAN_Filter_Mask_Config(1, CanFilter_3 | CanFifo_0 | Can_STDID, 0x140, 0x3ff); // 瓴控电机
   CAN_Filter_Mask_Config(2, CanFilter_17 | CanFifo_0 | Can_STDID, 0x140, 0x1FFFFFF8); // 瓴控电机

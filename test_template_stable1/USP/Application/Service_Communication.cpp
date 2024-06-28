@@ -128,8 +128,12 @@ void Task_CAN1Receive(void *arg)
     /* update motor data from CAN1_RxPort */
     if (xQueueReceive(CAN1_RxPort, &CAN_RxCOB, portMAX_DELAY) == pdPASS)
     {
-      // lkmotor.update(CAN_RxCOB.ID, CAN_RxCOB.Data);
-       rMiddleware.Motor_Rec(&CAN_RxCOB);
+//       lkmotor.update(CAN_RxCOB.ID, CAN_RxCOB.Data);
+      //  rMiddleware.Motor_Rec(&CAN_RxCOB);
+      rMiddleware.realjointMotor[0].update(CAN_RxCOB.ID, CAN_RxCOB.Data);
+      rMiddleware.realjointMotor[1].update(CAN_RxCOB.ID, CAN_RxCOB.Data);
+      rMiddleware.realjointMotor[2].update(CAN_RxCOB.ID, CAN_RxCOB.Data);
+
       // 这里调用自定义的电机can数据更新接口
       // 注意！！！如果接口里函数嵌套、临时变量很多，请考虑该任务栈大小
 
@@ -164,8 +168,10 @@ void Task_CAN2Receive(void *arg)
     /* update motor data from CAN1_RxPort */
     if (xQueueReceive(CAN2_RxPort, &CAN_RxCOB, portMAX_DELAY) == pdPASS)
     {
-      // lkmotor.update(CAN_RxCOB.ID, CAN_RxCOB.Data);
-       rMiddleware.Motor_Rec(&CAN_RxCOB);
+//       lkmotor.update(CAN_RxCOB.ID, CAN_RxCOB.Data);
+      //  rMiddleware.Motor_Rec(&CAN_RxCOB);
+      rMiddleware.realjointMotor[3].update(CAN_RxCOB.ID, CAN_RxCOB.Data);
+      rMiddleware.realjointMotor[4].update(CAN_RxCOB.ID, CAN_RxCOB.Data);
       // 这里调用自定义的电机can数据更新接口
       // 注意！！！如果接口里函数嵌套、临时变量很多，请考虑该任务栈大小
 
