@@ -133,7 +133,7 @@ void Debug_State::State_Handler()
   else{
     if(context->middleware->ctrl_enable == true)
     {
-      // context->middleware->ctrlActuate(context->controller->target_angle.getArray(),context->test_t);
+      context->middleware->ctrlActuate(context->controller->target_angle.getArray(),context->test_t);
 
       // float angle = (context->test_angle / context->middleware->direction[0] + context->middleware->offsetAngle[0]);
       // anglePID.Target = angle;
@@ -149,10 +149,10 @@ void Debug_State::State_Handler()
     }
   }
 
-  // if(context->is_offset==true&&context->real_offset==false){
-  //   context->real_offset = true;
-  //   context->middleware->realjointMotor[2].writeNowEncoderAsOffset();
-  // }
+  if(context->is_offset==true&&context->real_offset==false){
+    context->real_offset = true;
+    context->middleware->realjointMotor[0].writeNowEncoderAsOffset();
+  }
 }
 
 /**

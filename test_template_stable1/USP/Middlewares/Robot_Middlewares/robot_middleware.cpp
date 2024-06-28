@@ -89,6 +89,19 @@ void robotMiddleware::jointInit()
     direction[3] = 1;
     direction[4] = 1;
   }
+  else{
+    offsetAngle[0] = 89.43;
+    offsetAngle[1] = 156.24;
+    offsetAngle[2] = 149.67;
+    offsetAngle[3] = 269.18;
+    offsetAngle[4] = 283.64;
+    // 设置初始化极性
+    direction[0] = 1;
+    direction[1] = -1;
+    direction[2] = -1;
+    direction[3] = -1;
+    direction[4] = -1;
+  }
 }
 
 /**

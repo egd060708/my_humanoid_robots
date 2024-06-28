@@ -15,8 +15,8 @@ const uint16_t slave_link_threshold = 40;
 enum jointID
 {
 	HIP_ROLL = 0,
-	HIP_PITCH = 1,
-	HIP_YAW = 2,
+	HIP_PITCH = 2,
+	HIP_YAW = 1,
 	KNEE = 3,
 	ANKLE = 4
 };
@@ -52,7 +52,11 @@ public:
 	void init(QueueHandle_t _Usart_TxPort, uint8_t _port_num);
 
 	// abstractMotor<LkMotorBass> jointMotor[5] = {LkMotorBass(1), LkMotorBass(2), LkMotorBass(3), LkMotorBass(4), LkMotorBass(1)}; //单腿五个驱动关节
+#if L_LEG
 	LkMotorBass realjointMotor[5] = {LkMotorBass(1),LkMotorBass(3),LkMotorBass(2),LkMotorBass(4),LkMotorBass(1)};
+#else
+	LkMotorBass realjointMotor[5] = {LkMotorBass(6),LkMotorBass(3),LkMotorBass(2),LkMotorBass(4),LkMotorBass(5)};
+#endif
 	float offsetAngle[5] = {0};
 	float startAngle[5] = {0};
 	float direction[5] = {0};
