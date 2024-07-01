@@ -33,16 +33,13 @@ void Reset_State::State_Handler()
 void LostCtrl_State::State_Handler()
 {
   context->state_flag = sMachine::LOSTCTRL;
-  context->controller->setReset(true);
-  if (L_LEG == 1)
-  {
-    context->controller->updatePos_t(context->middleware->recHostPack.endPoint);
-  }
-  else
-  {
-    context->controller->updatePos_t(context->middleware->recSlavePack.endPoint);
-  }
+  context->controller->resetPos_t();
   context->middleware->noCtrl();
+  context->middleware->isReset_reaching = false;
+  if (context->middleware->preCtrl_enable == true)
+  {
+    context->Status_Switching(&preCtrlState);
+  }
 }
 
 /**
@@ -53,18 +50,14 @@ void PreCtrl_State::State_Handler()
 {
   context->state_flag = sMachine::PRECTRL;
   // 控制双腿到达初始位型
-  context->controller->setReset(true);
-  if (L_LEG == 1)
-  {
-    context->controller->updatePos_t(context->middleware->recHostPack.endPoint);
-  }
-  else
-  {
-    context->controller->updatePos_t(context->middleware->recSlavePack.endPoint);
-  }
-  // float speed[5] = {10};
-  // context->middleware->ctrlActuate(context->controller->target_angle.getArray(), speed);
-  if (context->controller->is_reaching())
+  context->controller->resetPos_t();
+  context->middleware->ctrlActuate(context->controller->target_angle.getArray(), 4);
+  context->middleware->isReset_reaching = context->controller->is_reaching();
+  // if (context->middleware->isReset_reaching == true && context->middleware->ctrl_enable == true)
+  // {
+  //   context->Status_Switching(&ctrlState);
+  // }
+  if (context->middleware->ctrl_enable == true)
   {
     context->Status_Switching(&ctrlState);
   }
@@ -77,22 +70,30 @@ void PreCtrl_State::State_Handler()
 void Ctrl_State::State_Handler()
 {
   context->state_flag = sMachine::CTRL;
-  // 控制双腿到达目标位型
-  if (L_LEG == 1)
+  if (L_LEG == 0)
   {
-    context->controller->updatePos_t(context->middleware->recHostPack.endPoint);
+    if (context->middleware->is_host_connet)
+    {
+      context->controller->updatePos_t(context->middleware->cmd_endPoint);
+      context->middleware->ctrlActuate(context->controller->target_angle.getArray(), 2);
+    }
+    else
+    {
+      context->middleware->ctrlActuate(context->controller->target_angle.getArray(), 4);
+    }
   }
-  else
+  else if (L_LEG == 1)
   {
-    context->controller->updatePos_t(context->middleware->recSlavePack.endPoint);
+    if (context->middleware->is_slave_connet)
+    {
+      context->controller->updatePos_t(context->middleware->cmd_endPoint);
+      context->middleware->ctrlActuate(context->controller->target_angle.getArray(), 2);
+    }
+    else
+    {
+      context->middleware->ctrlActuate(context->controller->target_angle.getArray(), 4);
+    }
   }
-  float speed[5];
-  for (int i = 0; i < 5; i++)
-  {
-    // 计算速度并且转为RPM
-    speed[i] = (context->controller->target_angle.getElement(0, i) - context->controller->current_angle.getElement(0, i)) * 60 / 2 / PI / context->middleware->recHostPack.dt;
-  }
-  // context->middleware->ctrlActuate(context->controller->target_angle.getArray(), speed);
 }
 
 /**
@@ -109,31 +110,32 @@ void Debug_State::State_Handler()
   // myPID anglePID;
   // anglePID.SetPIDParam(kp,ki,0,i_max,o_max);
   // context->middleware->ctrlActuate(context->realAngle, speed);
-  if(L_LEG==1){
+  if (L_LEG == 1)
+  {
+    if (context->middleware->ctrl_enable == true)
+    {
+      // context->middleware->ctrlActuate(context->controller->target_angle.getArray(), context->test_t);
+
+      // float angle = (context->test_angle / context->middleware->direction[0] + context->middleware->offsetAngle[0]);
+      // anglePID.Target = angle;
+      // anglePID.Current = context->middleware->realjointMotor[0].getData().singleAngle;
+      // ch[0] = anglePID.Target;
+      // ch[1] = anglePID.Current;
+      // anglePID.Adjust();
+      // context->middleware->realjointMotor[0].speedControl(anglePID.Out);
+    }
+    else
+    {
+      context->middleware->noCtrl();
+    }
+  }
+  else
+  {
     context->middleware->sendSlavePack.ctrl_enable = context->middleware->ctrl_enable;
     context->middleware->sendSlave();
-    if(context->middleware->remote->getData().SD == SW_UP)
+    if (context->middleware->remote->getData().SD == SW_UP)
     {
-      // context->middleware->ctrlActuate(context->controller->target_angle.getArray(),context->test_t);
-
-
-      // float angle = (context->test_angle / context->middleware->direction[0] + context->middleware->offsetAngle[0]);
-      // anglePID.Target = angle;
-      // anglePID.Current = context->middleware->realjointMotor[0].getData().singleAngle;
-      // ch[0] = anglePID.Target;
-      // ch[1] = anglePID.Current;
-      // anglePID.Adjust();
-      // context->middleware->realjointMotor[0].speedControl(anglePID.Out);
-    }
-    else
-    {
-      context->middleware->noCtrl();
-    }
-  }
-  else{
-    if(context->middleware->ctrl_enable == true)
-    {
-      context->middleware->ctrlActuate(context->controller->target_angle.getArray(),context->test_t);
+      // context->middleware->ctrlActuate(context->controller->target_angle.getArray(), context->test_t);
 
       // float angle = (context->test_angle / context->middleware->direction[0] + context->middleware->offsetAngle[0]);
       // anglePID.Target = angle;
@@ -149,7 +151,8 @@ void Debug_State::State_Handler()
     }
   }
 
-  if(context->is_offset==true&&context->real_offset==false){
+  if (context->is_offset == true && context->real_offset == false)
+  {
     context->real_offset = true;
     context->middleware->realjointMotor[0].writeNowEncoderAsOffset();
   }
@@ -173,19 +176,35 @@ Humanoid_Leg_Classdef::Humanoid_Leg_Classdef(Arm_Controller_s<5> *_controller, r
                                  -1, 0, 0, 0,
                                  0, 1, 0, 0,
                                  0, 0, 0, 1};
-  const float angle[5] = {0, 0, 0, 0, 0};
-  const float jointCs[2 * 5] = {PI * 0.4, 0,
-                                PI * 0.1, PI * -0.3,
-                                PI * 0.3, PI * -0.5,
-                                PI * 0.6, 0,
+  const float angle[5] = {0, 0., -0.2, 0.4, -0.2};
+#if L_LEG
+  const float jointCs[2 * 5] = {PI * 0.3, 0,
+                                PI * 0.3, PI * -0.1,
+                                PI * 0.34, PI * -0.34,
+                                PI * 0.45, 0,
                                 PI * 0.3, PI * -0.3};
   const float workArrCs[2 * 6] = {0.3, -0.3,
                                   0.2, -0.05,
-                                  -0.2, -0.65,
-                                  PI * 0.4, 0,
-                                  PI * 0.4, -PI * 0.4,
-                                  PI * 0.3, -PI * 0.1};
-  controller->arm_dof.import_DH(1, PI * 0.5, 0.06, 0, 0, 0);
+                                  -0.5, -0.65,
+                                  0, 0,
+                                  0, 0,
+                                  0, 0};
+#else
+  const float jointCs[2 * 5] = {0, -PI * 0.3,
+                                PI * 0.1, PI * -0.3,
+                                PI * 0.34, PI * -0.34,
+                                PI * 0.45, 0,
+                                PI * 0.3, PI * -0.3};
+  const float workArrCs[2 * 6] = {0.3, -0.3,
+                                  0.05, -0.2,
+                                  -0.5, -0.65,
+                                  0, 0,
+                                  0, 0,
+                                  0, 0};
+#endif
+
+  // controller->arm_dof.import_DH(1, PI * 0.5, 0.06, 0, 0, 0);
+  controller->arm_dof.import_DH(1, PI * 0.5, 0, 0, 0, 0);
   controller->arm_dof.import_DH(2, PI * 0.5, 0, 0.145 + 0.066, 0, PI * 0.5);
   controller->arm_dof.import_DH(3, PI * 0.5, 0, 0, 0, PI * 0.5);
   controller->arm_dof.import_DH(4, 0, 0.180, 0, 0, 0);
@@ -208,10 +227,11 @@ void Humanoid_Leg_Classdef::State_Data_Update()
   middleware->judge_ctrl_enable();
   // 更新电机初始状态
   middleware->jointGetStartAngle();
-  // 机械臂控制，更新电机状态，正运动学计算当前姿态，逆运动学求解目标姿态
+  // 机械臂控制，更新电机状态，正运动学计算当前姿态，逆运动学求解目标姿态(记得转成弧度制)
   for (int i = 0; i < 5; i++)
   {
-    realAngle[i] = (middleware->realjointMotor[i].getData().totalAngleLocal + middleware->startAngle[i] - middleware->offsetAngle[i]) * middleware->direction[i];
+    // realAngle[i] = (middleware->realjointMotor[i].getData().totalAngleLocal + middleware->startAngle[i] - middleware->offsetAngle[i]) * middleware->direction[i];
+    realAngle[i] = (middleware->realjointMotor[i].getData().singleAngle - middleware->offsetAngle[i]) * middleware->direction[i] / 360. * PI;
   }
   controller->updateAngle_c(realAngle);
 }
@@ -234,14 +254,14 @@ void Humanoid_Leg_Classdef::State_Judge()
     }
     else
     {
-      if (!middleware->ctrl_enable) // 如果使能了控制，那就开始
+      if (!middleware->preCtrl_enable) // 如果使能了控制，那就开始
       {
         Status_Switching(&lostCtrlState);
       }
-      else
-      {
-        Status_Switching(&preCtrlState);
-      }
+      // else
+      // {
+      //   Status_Switching(&preCtrlState);
+      // }
     }
   }
   current_state->State_Handler(); // 执行当前状态机
@@ -253,5 +273,5 @@ void Humanoid_Leg_Classdef::State_Judge()
  */
 void Humanoid_Leg_Classdef::State_Return()
 {
-  middleware->returnStateData(controller->arm_dof.jointSpace_c.getArray(), controller->arm_dof.workArray_c.getArray());
+  middleware->returnStateData(controller->arm_dof.workArray_c.getArray());
 }

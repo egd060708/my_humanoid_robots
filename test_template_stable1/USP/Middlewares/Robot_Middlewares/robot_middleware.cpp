@@ -8,16 +8,23 @@
  */
 robotMiddleware::robotMiddleware(BETAFPV_Classdef *_remote) : remote(_remote)
 {
-  jointPID[0].SetPIDParam(40, 5, 0, 10, 120);
-  jointPID[1].SetPIDParam(30, 5, 0, 8, 100);
-  jointPID[2].SetPIDParam(30, 5, 0, 8, 80);
-  jointPID[3].SetPIDParam(30, 5, 0, 8, 80);
-  jointPID[4].SetPIDParam(40, 5, 0, 10, 120);
+  // jointPID[0].SetPIDParam(40, 5, 0, 10, 120);
+  // jointPID[1].SetPIDParam(30, 5, 0, 8, 100);
+  // jointPID[2].SetPIDParam(30, 5, 0, 8, 80);
+  // jointPID[3].SetPIDParam(30, 5, 0, 8, 80);
+  // jointPID[4].SetPIDParam(40, 5, 0, 10, 120);
+  jointPID[0].SetPIDParam(40, 0, 0, 0, 120);
+  jointPID[1].SetPIDParam(30, 0, 0, 0, 100);
+  jointPID[2].SetPIDParam(30, 0, 0, 0, 80);
+  jointPID[3].SetPIDParam(30, 0, 0, 0, 80);
+  jointPID[4].SetPIDParam(40, 0, 0, 0, 120);
   jointPID[0].Out_Max = 20;
   jointPID[1].Out_Max = 20;
   jointPID[2].Out_Max = 20;
   jointPID[3].Out_Max = 20;
   jointPID[4].Out_Max = 20;
+
+  cmd_endPoint[2] = -0.63;
 }
 
 /**
@@ -89,7 +96,8 @@ void robotMiddleware::jointInit()
     direction[3] = 1;
     direction[4] = 1;
   }
-  else{
+  else
+  {
     offsetAngle[0] = 89.43;
     offsetAngle[1] = 156.24;
     offsetAngle[2] = 149.67;
@@ -127,22 +135,20 @@ void robotMiddleware::jointGetStartAngle()
  */
 void robotMiddleware::processRecHost(uint8_t *Recv_Data, uint16_t ReceiveLen)
 {
-  hostCom_s getHost;
-  memcpy(&getHost, Recv_Data, sizeof(ReceiveLen));
-  if (getHost.id == HOSTCOM_ID_L)
-  {
-    // 如果是第一块板子那么直接copy
-    recHostPack = getHost;
-    host_link_count = 0;
-  }
-  else if (getHost.id == HOSTCOM_ID_R)
-  {
-    // 如果是第二块板子那么直接转发
-    memcpy(&sendSlavePack, Recv_Data, sizeof(sendSlavePack.jointAngle) + sizeof(sendSlavePack.endPoint));
-    sendSlavePack.ctrl_enable = ctrl_enable;
-    sendSlaveFromISR();
-    host_link_count = 0;
-  }
+  memcpy(&recHostPack, Recv_Data, sizeof(hostCom_rs));
+  // 放入自己的cmd里面
+  memcpy(cmd_endPoint, &recHostPack.r_EndPoint, sizeof(cmd_endPoint));
+  upper::constrain(cmd_endPoint[0], 0.1);
+  upper::constrain(cmd_endPoint[1], 0.0001);
+  upper::constrain(cmd_endPoint[2], -0.65, -0.58);
+  upper::constrain(cmd_endPoint[3], 0.0001);
+  upper::constrain(cmd_endPoint[4], 0.0001);
+  upper::constrain(cmd_endPoint[5], 0.0001);
+  cmd_dt = recHostPack.r_dt;
+  // 更新通信检测计数
+  host_link_count = 0;
+  // 放入发送到从机的数据里面
+  memcpy(&sendSlavePack, &recHostPack.l_EndPoint, sizeof(sendSlavePack.endPoint) + sizeof(sendSlavePack.dt));
 }
 
 /**
@@ -161,7 +167,23 @@ void robotMiddleware::sendHost()
  */
 void robotMiddleware::processRecSlave(slaveCom_s *_recData)
 {
-  memcpy(&recSlavePack, _recData, sizeof(recSlavePack));
+  if (L_LEG == 1)
+  {
+    memcpy(&recSlavePack, _recData, sizeof(recSlavePack));
+    memcpy(cmd_endPoint, &recSlavePack.endPoint, sizeof(cmd_endPoint));
+    upper::constrain(cmd_endPoint[0], 0.1);
+    upper::constrain(cmd_endPoint[1], 0.0001);
+    upper::constrain(cmd_endPoint[2], -0.65, -0.58);
+    upper::constrain(cmd_endPoint[3], 0.0001);
+    upper::constrain(cmd_endPoint[4], 0.0001);
+    upper::constrain(cmd_endPoint[5], 0.0001);
+    cmd_dt = recSlavePack.dt;
+  }
+  else
+  {
+    memcpy(&recSlavePack, _recData, sizeof(recSlavePack));
+  }
+
   slave_link_count = 0;
 }
 
@@ -212,10 +234,10 @@ void robotMiddleware::ctrlActuate(const float _angle[5], float _time)
     ctrlAngle[i] = _angle[i] / PI * 180 / direction[i] + offsetAngle[i];
     jointPID[i].Target = ctrlAngle[i];
     jointPID[i].Current = realjointMotor[i].getData().singleAngle;
-    // if(jointPID[i].Target != lastTarget[i])
-    // {
-    //   jointPID[i].Out_Max = abs(jointPID[i].Target - lastTarget[i])/_time*60.0;
-    // }
+    if (jointPID[i].Target != lastTarget[i])
+    {
+      jointPID[i].Out_Max = upper::constrain(abs(jointPID[i].Target - lastTarget[i]) / 360. / _time * 60.0, 100);
+    }
     jointPID[i].Adjust();
     lastTarget[i] = jointPID[i].Target;
   }
@@ -279,19 +301,38 @@ void robotMiddleware::judge_ctrl_enable()
   // 这里相当于对两个板子做了分化处理
   if (L_LEG == 0)
   {
-    // slave
-    ctrl_enable = recSlavePack.ctrl_enable;
-  }
-  else
-  {
-    if (remote->GetStatus() && remote->getData().SA == SW_UP && remote->getData().SD == SW_UP)
+    if (remote->GetStatus() && remote->getData().SA == SW_UP)
     {
-      ctrl_enable = true;
+      preCtrl_enable = true;
+      if (remote->getData().SD == SW_UP)
+      {
+        ctrl_enable = true;
+        sendHostPack.flag = true;
+      }
+      else
+      {
+        ctrl_enable = false;
+        sendHostPack.flag = false;
+      }
     }
     else
     {
+      preCtrl_enable = false;
       ctrl_enable = false;
+      sendHostPack.flag = false;
     }
+  }
+  else
+  {
+    // slave
+    ctrl_enable = recSlavePack.ctrl_enable;
+    preCtrl_enable = recSlavePack.preCtrl_enable;
+  }
+  if (L_LEG == 0)
+  {
+    sendSlavePack.ctrl_enable = ctrl_enable;
+    sendSlavePack.preCtrl_enable = preCtrl_enable;
+    sendSlave();
   }
 }
 
@@ -303,18 +344,14 @@ void robotMiddleware::returnDataSend()
 {
   if (L_LEG == 0)
   {
-    // slave
-    sendSlave();
+    // 前面已经把自己的更新过了，这里就直接加入另一个腿的部分发送即可
+    memcpy(&sendHostPack.l_EndPoint, &recSlavePack, sizeof(sendHostPack.l_EndPoint));
+    sendHost();
   }
   else
   {
-    // 先把自己的发了
-    sendHostPack.id = HOSTCOM_ID_L;
-    sendHost();
-    // 再把另一个板子的数据发过去
-    memcpy(&sendHostPack, &recSlavePack, sizeof(sendHostPack.jointAngle) + sizeof(sendHostPack.endPoint));
-    sendHostPack.id = HOSTCOM_ID_R;
-    sendHost();
+    // slave
+    sendSlave();
   }
 }
 
@@ -324,28 +361,21 @@ void robotMiddleware::returnDataSend()
  * @param joint
  * @param endPoint
  */
-void robotMiddleware::returnStateData(const float joint[5], const float endPoint[6])
+void robotMiddleware::returnStateData(const float endPoint[6])
 {
   if (L_LEG == 0)
   {
     for (int i = 0; i < 6; i++)
     {
-      if (i < 5)
-      {
-        sendSlavePack.jointAngle[i] = joint[i];
-      }
-      sendSlavePack.endPoint[i] = endPoint[i];
+      sendHostPack.r_EndPoint[i] = endPoint[i];
     }
   }
   else
   {
     for (int i = 0; i < 6; i++)
     {
-      if (i < 5)
-      {
-        sendHostPack.jointAngle[i] = joint[i];
-      }
-      sendHostPack.endPoint[i] = endPoint[i];
+      sendSlavePack.endPoint[i] = endPoint[i];
     }
   }
+  returnDataSend();
 }

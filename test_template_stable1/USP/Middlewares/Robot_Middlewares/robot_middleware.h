@@ -5,7 +5,7 @@
 #include "BetaFPV.h"
 
 // 判断是左腿还是右腿，预编译中间层内容
-#define L_LEG 0
+#define L_LEG 1
 
 const uint16_t host_link_threshold = 40;
 const uint16_t slave_link_threshold = 40;
@@ -23,22 +23,32 @@ enum jointID
 
 /*与上位机通信*/
 #pragma pack(1)
-typedef struct _hostCom_s
+typedef struct _hostCom_rs
 {
-	float jointAngle[5];
-	float endPoint[6];
-	float dt;
-	uint8_t id;
-} hostCom_s;
+	float r_EndPoint[6];
+	float r_dt;
+	float l_EndPoint[6];
+	float l_dt;
+} hostCom_rs;
+#pragma pack()
+
+#pragma pack(1)
+typedef struct _hostCom_ss
+{
+	float r_EndPoint[6];
+	float l_EndPoint[6];
+	uint8_t flag;
+} hostCom_ss;
 #pragma pack()
 
 /*与另一个从机通信*/
 #pragma pack(1)
 typedef struct _slaveCom_s
 {
-	float jointAngle[5];
 	float endPoint[6];
+	float dt;
 	bool ctrl_enable = false;
+	bool preCtrl_enable = false;
 } slaveCom_s;
 #pragma pack()
 
@@ -53,9 +63,9 @@ public:
 
 	// abstractMotor<LkMotorBass> jointMotor[5] = {LkMotorBass(1), LkMotorBass(2), LkMotorBass(3), LkMotorBass(4), LkMotorBass(1)}; //单腿五个驱动关节
 #if L_LEG
-	LkMotorBass realjointMotor[5] = {LkMotorBass(1),LkMotorBass(3),LkMotorBass(2),LkMotorBass(4),LkMotorBass(1)};
+	LkMotorBass realjointMotor[5] = {LkMotorBass(1), LkMotorBass(3), LkMotorBass(2), LkMotorBass(4), LkMotorBass(1)};
 #else
-	LkMotorBass realjointMotor[5] = {LkMotorBass(6),LkMotorBass(3),LkMotorBass(2),LkMotorBass(4),LkMotorBass(5)};
+	LkMotorBass realjointMotor[5] = {LkMotorBass(6), LkMotorBass(3), LkMotorBass(2), LkMotorBass(4), LkMotorBass(5)};
 #endif
 	float offsetAngle[5] = {0};
 	float startAngle[5] = {0};
@@ -67,8 +77,12 @@ public:
 	void jointInit();
 	void jointGetStartAngle();
 
-	hostCom_s sendHostPack; // 发送上位机数据
-	hostCom_s recHostPack;	// 接收上位机数据
+	//当前指令
+	float cmd_endPoint[6] = {0};
+	float cmd_dt = 4;
+
+	hostCom_ss sendHostPack; // 发送上位机数据
+	hostCom_rs recHostPack;	 // 接收上位机数据
 	void processRecHost(uint8_t *Recv_Data, uint16_t ReceiveLen);
 	void sendHost();
 	bool is_host_connet = false;
@@ -83,7 +97,7 @@ public:
 	uint16_t slave_link_count = slave_link_threshold; //初始化认为没有连接，设置为阈值
 
 	void returnDataSend(); // 返回数据函数
-	void returnStateData(const float joint[5], const float endPoint[6]);
+	void returnStateData(const float endPoint[6]);
 
 	QueueHandle_t Usart_TxPort;
 	USART_COB Usart_RxCOB;
@@ -95,5 +109,7 @@ public:
 	void link_check();
 
 	bool ctrl_enable = false; // 多重判断归结到一个标志位指示是否能进行控制
+	bool preCtrl_enable = false; // 是否进入预控制
+	bool isReset_reaching = false;
 	void judge_ctrl_enable(); // 根据当前状态判断是否能够使能控制
 };

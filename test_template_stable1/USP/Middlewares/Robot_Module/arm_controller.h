@@ -24,13 +24,11 @@ public:
 	void updateAngle_t(const float _tangle[jNum]);																								//更新观测值
 	void updatePos_dt(float _droll, float _dpitch, float _dyaw, float _dx, float _dy, float _dz); //末端运动算子
 	void updatePos_t(float _roll, float _pitch, float _yaw, float _x, float _y, float _z);				//末端运动目标
+	void resetPos_t(); // 重置末端位置
 	void updatePos_t(float _endPoint[6]);
 	void actuate();			//控制器执行
 	bool is_reaching(); //判断是否能够响应目标值
-	void setReset(bool _reset)
-	{
-		is_reset = _reset;
-	}
+	
 	float motor_out[jNum];
 };
 
@@ -123,11 +121,7 @@ inline void Arm_Controller_s<jNum>::updatePos_dt(float _droll, float _dpitch, fl
 	workSpace_t = workSpace_t * Tpitch;
 	workSpace_t = workSpace_t * Tyaw;
 	workSpace_t = workSpace_t * Troll;
-	if (is_reset)
-	{
-		workSpace_t = oriWorkSpace;
-		// workSpace_t.print();
-	}
+	
 	arm_dof.update_Space_t(workSpace_t);
 	target_angle = arm_dof.jointSpace_t;
 }
@@ -165,11 +159,7 @@ inline void Arm_Controller_s<jNum>::updatePos_t(float _roll, float _pitch, float
 	workSpace_t = workSpace_t * Troll;
 	workSpace_t = workSpace_t * Tpitch;
 	workSpace_t = workSpace_t * Tyaw;
-	if (is_reset)
-	{
-		workSpace_t = oriWorkSpace;
-		// workSpace_t.print();
-	}
+	
 	arm_dof.update_Space_t(workSpace_t);
 	target_angle = arm_dof.jointSpace_t;
 }
@@ -196,12 +186,19 @@ inline void Arm_Controller_s<jNum>::updatePos_t(float _endPoint[6])
 	workSpace_t = workSpace_t * Troll;
 	workSpace_t = workSpace_t * Tyaw;
 	workSpace_t = workSpace_t * Tpitch;
-	if (is_reset)
-	{
-		workSpace_t = oriWorkSpace;
-		// workSpace_t.print();
-	}
+	
 	arm_dof.update_Space_t(workSpace_t);
+	target_angle = arm_dof.jointSpace_t;
+}
+
+/**
+ * @brief 重置机器人初始状态
+ * 
+ * @tparam jNum 
+ */
+template <uint8_t jNum>
+inline void Arm_Controller_s<jNum>::resetPos_t(){
+	arm_dof.update_Space_t(oriWorkSpace);
 	target_angle = arm_dof.jointSpace_t;
 }
 
@@ -226,7 +223,7 @@ inline bool Arm_Controller_s<jNum>::is_reaching()
 {
 	for (int i = 0; i < jNum; i++)
 	{
-		if (abs(target_angle.getElement(0, i) - current_angle.getElement(0, i)) > 0.035)
+		if (abs(target_angle.getElement(0, i) - current_angle.getElement(0, i)) > 0.1)
 		{
 			return false;
 		}

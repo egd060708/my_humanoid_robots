@@ -93,7 +93,7 @@ public:
   // float targetAngle[5] = {0};
 
   bool is_reset = false;
-  bool is_debug = true;                                //定义一个debug标志，如果是debug模式，则只在debug状态机中运行
+  bool is_debug = false;                                //定义一个debug标志，如果是debug模式，则只在debug状态机中运行
   float debug_endPoint[6] = {0, 0, -0.63, 0, 0., 0}; //调试用的末端指令
   float debug_joint_t[5] = {0, 0, 0, 0, 0};            //调试用的关节指令
 
@@ -101,6 +101,6 @@ public:
   bool real_offset = false;
 
   float test_angle = 0;
-  float test_t = 2.;
+  float test_t = 5.;
   bool is_test_on = false;
 };

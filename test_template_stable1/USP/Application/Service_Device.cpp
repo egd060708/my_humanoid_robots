@@ -84,7 +84,7 @@ void tskHelp(void *arg)
 	for (;;)
 	{
 		/* wait for next circle */
-		vTaskDelayUntil(&xLastWakeTime_t, 5);
+		vTaskDelayUntil(&xLastWakeTime_t, 10);
 		// 检测任务运行之后的堆栈剩余情况          
 		humanLeg.State_Judge();
 		humanLeg.State_Return();
@@ -141,7 +141,7 @@ void tskDjiMotor(void *arg)
 	for (;;)
 	{
 		/* wait for next circle */
-		vTaskDelayUntil(&xLastWakeTime_t, 5);
+		vTaskDelayUntil(&xLastWakeTime_t, 10);
 		// 检测任务运行之后的堆栈剩余情况          
     
 		humanLeg.State_Data_Update();

@@ -77,6 +77,9 @@ public:
 	void set_spaceCali(const float _preSpaceCali[4 * 4], const float _lastSpaceCali[4 * 4]);		 //更新姿态校准矩阵
 	void set_jointCs(const float _acs[2 * jNum]);																								 //设置关节空间目标约束
 	void set_workArrayCs(const float _wcs[2 * 6]);																							 //设置空间向量目标约束
+
+	float debug_angle[5]={0};
+	float debug_matrix[16] = {0};
 };
 
 /**
@@ -208,29 +211,53 @@ template <uint8_t jNum>
 inline myMatrices Arm_Def_s<jNum>::fk(const float _angle[jNum])
 {
 	myMatrices T(4);
-	T = preSpaceCali; //预姿态校准矩阵
-	for (int i = 0; i < jNum; i++)
-	{
-		myMatrices T1(4); // alpha和a组成
-		myMatrices T2(4); // d和theta组成
-		float _alpha = DH_params.getElement(i, 0);
-		float _a = DH_params.getElement(i, 1);
-		float _d = DH_params.getElement(i, 2);
-		float _theta = DH_params.getElement(i, 4) + _angle[jNum];
-		float T1_array[4 * 4] = {1, 0, 0, _a,
-														 0, cosf(_alpha), -sinf(_alpha), 0,
-														 0, sinf(_alpha), cosf(_alpha), 0,
-														 0, 0, 0, 1};
-		float T2_array[4 * 4] = {cosf(_theta), -sinf(_theta), 0, 0,
-														 sinf(_theta), cosf(_theta), 0, 0,
-														 0, 0, 1, _d,
-														 0, 0, 0, 1};
-		T1.setArray(T1_array, 4 * 4);
-		T2.setArray(T2_array, 4 * 4);
-		myMatrices dT = T1 * T2;
-		T = T * dT; //右乘
+	// T = preSpaceCali; //预姿态校准矩阵
+	// for (int i = 0; i < jNum; i++)
+	// {
+	// 	myMatrices T1(4); // alpha和a组成
+	// 	myMatrices T2(4); // d和theta组成
+	// 	float _alpha = DH_params.getElement(i, 0);
+	// 	float _a = DH_params.getElement(i, 1);
+	// 	float _d = DH_params.getElement(i, 2);
+	// 	float _theta = DH_params.getElement(i, 4) + _angle[jNum];
+	// 	float T1_array[4 * 4] = {1, 0, 0, _a,
+	// 													 0, cosf(_alpha), -sinf(_alpha), 0,
+	// 													 0, sinf(_alpha), cosf(_alpha), 0,
+	// 													 0, 0, 0, 1};
+	// 	float T2_array[4 * 4] = {cosf(_theta), -sinf(_theta), 0, 0,
+	// 													 sinf(_theta), cosf(_theta), 0, 0,
+	// 													 0, 0, 1, _d,
+	// 													 0, 0, 0, 1};
+	// 	T1.setArray(T1_array, 4 * 4);
+	// 	T2.setArray(T2_array, 4 * 4);
+	// 	myMatrices dT = T1 * T2;
+	// // 	for(int i=0;i<4;i++){
+	// // 	for(int j=0;j<4;j++){
+	// // 		debug_matrix[i*4+j] = T2.getElement(i,j);
+	// // 	}
+	// // }
+	// 	T = T * dT; //右乘
+	// }
+	// T = T * lastSpaceCali; // 加入末端姿态校准矩阵
+	/*双足单腿*/
+	float L1 = 0.066;
+	float L2 = 0.145;
+	float L3 = 0.180;
+	float L4 = 0.200;
+	float L5 = 0.060;
+	float z = -(L1+L2+L3*cosf(_angle[2])+L4*cosf(_angle[3])+L5*cosf(_angle[4]));
+	float x = -L3*sinf(_angle[2]) - L4*sinf(_angle[2]+_angle[3]) - L5*sinf(_angle[2]+_angle[3]+_angle[4]);
+	for(int i=0;i<4;i++){
+		for(int j=0;j<4;j++){
+			T.setElement(i,j,0);
+		}
 	}
-	T = T * lastSpaceCali; // 加入末端姿态校准矩阵
+	T.setElement(0,0,1);
+	T.setElement(1,1,1);
+	T.setElement(2,2,1);
+	T.setElement(3,3,1);
+	T.setElement(0,3,x);
+	T.setElement(2,3,z);
 	return T;
 }
 
